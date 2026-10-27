@@ -15,6 +15,18 @@ Paste a set, speech or toast and pick a city (and optionally the room: college s
 
 It also asks a model with no data to guess the same verdicts, and shows where the guess and Qloo disagree. That is the point of the project: without Qloo, an AI can only guess in stereotypes.
 
+### The Road Manager
+
+A chat agent inside the report that calls Qloo on its own (OpenRouter tool calling) to answer questions like "What should I open with in Nashville?" or "Where should I take this set on tour?". Every tool call it makes is shown with the Qloo requests behind it.
+
+### Use it from your own agent (MCP)
+
+The same four Qloo tools are exposed as a stateless MCP server at `/api/mcp` (Streamable HTTP): `score_references`, `find_swaps`, `city_favorites`, `compare_cities`.
+
+```bash
+claude mcp add --transport http read-the-room https://<your-deployment>/api/mcp
+```
+
 ## Why it needs Qloo
 
 The model never decides a verdict. It only reads the script and rewrites lines. Every verdict comes from Qloo numbers through a fixed rule ([`src/lib/scoring.ts`](src/lib/scoring.ts)), and every number links to the exact Qloo request behind it (the **Receipts** tab).

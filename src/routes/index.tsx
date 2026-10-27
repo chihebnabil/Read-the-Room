@@ -47,9 +47,28 @@ function Home() {
               tells you what will <span className="font-semibold text-kills">kill</span> and what will{' '}
               <span className="font-semibold text-dies">die</span>, and rewrites the weak lines with references they love.
             </p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+              <button
+                className="btn-bulb px-7 py-4 text-base"
+                disabled={state?.running}
+                onClick={() => {
+                  const p = PRESETS[0]
+                  setPresetId(p.id)
+                  setText(p.text)
+                  setCity('Brooklyn')
+                  setVenueId(VENUES[0].id)
+                  run(p.text, p.id, { city: 'Brooklyn', age: VENUES[0].age, venue: VENUES[0].label })
+                }}
+              >
+                ▶ One-click demo: a set written for Texas, read for Brooklyn
+              </button>
+              <a href="#try" className="btn-line px-6 py-4 text-base">
+                Use my own set
+              </a>
+            </div>
           </div>
 
-          <div className="panel mx-auto mt-12 max-w-5xl p-5 sm:p-7">
+          <div id="try" className="panel mx-auto mt-12 max-w-5xl scroll-mt-6 p-5 sm:p-7">
             <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
               <div>
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
@@ -162,7 +181,13 @@ function Home() {
         )}
       </div>
 
-      {!state && <HowStrip />}
+      {!state && (
+        <>
+          <HowStrip />
+          <WhyQloo />
+          <WhoFor />
+        </>
+      )}
     </>
   )
 }
@@ -184,6 +209,64 @@ function HowStrip() {
             <p className="mt-2 text-sm leading-relaxed text-stage-400">{b}</p>
           </div>
         ))}
+      </div>
+    </section>
+  )
+}
+
+function WhyQloo() {
+  return (
+    <section className="border-t border-stage-800 py-16">
+      <div className="mx-auto grid max-w-7xl items-center gap-10 px-6 lg:grid-cols-2">
+        <div>
+          <p className="eyebrow">Why not just ask a chatbot?</p>
+          <h2 className="display mt-2 text-4xl text-stage-100 sm:text-5xl">A model guesses in stereotypes. Qloo measures.</h2>
+          <p className="mt-4 text-stage-300">
+            Ask any AI whether a Yellowstone joke works in Brooklyn and it will reason from clichés. Read the Room asks Qloo, which
+            measures cultural affinity across 250M+ entities by place and age, and shows you every number it used. On each read, the app also
+            asks a model with no data to guess, so you can see exactly where the guess would have cost you the laugh.
+          </p>
+        </div>
+        <div className="panel space-y-3 p-6 font-mono text-sm">
+          <div className="flex items-center justify-between rounded-2xl bg-stage-950 p-4">
+            <span className="text-stage-300">AI alone</span>
+            <span className="text-stage-200">“Yellowstone is huge, it will land” 🔥</span>
+          </div>
+          <div className="flex items-center justify-between rounded-2xl bg-stage-950 p-4 ring-1 ring-bulb/40">
+            <span className="text-bulb">Qloo, Brooklyn</span>
+            <span className="text-stage-200">well below nationwide 💀</span>
+          </div>
+          <div className="flex items-center justify-between rounded-2xl bg-stage-950 p-4">
+            <span className="text-kills">Swap</span>
+            <span className="text-stage-200">a show Brooklyn over-indexes on 🔥</span>
+          </div>
+          <p className="pt-1 text-center font-sans text-xs text-stage-500">Illustration. Run the demo to see the real numbers and receipts.</p>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function WhoFor() {
+  const who = [
+    ['Touring comedians', 'One set, 40 cities. Know which bits travel and which need a local swap before the soundcheck.'],
+    ['Keynote and sales speakers', 'Open with a reference the room actually shares, not the one that played well at headquarters.'],
+    ['Agencies and brand teams', 'Localize one campaign script for every market: the same read works on ad copy, radio spots and social posts.'],
+    ['Hosts, MCs and toasts', 'Weddings, galas and award shows: know the room’s age and city before you pick the references.'],
+  ]
+  return (
+    <section className="border-t border-stage-800 py-16">
+      <div className="mx-auto max-w-7xl px-6">
+        <p className="eyebrow">Who it is for</p>
+        <h2 className="display mt-2 text-4xl text-stage-100 sm:text-5xl">Anyone who talks to a room they have never met</h2>
+        <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {who.map(([t, b]) => (
+            <div key={t} className="panel p-6">
+              <p className="text-lg font-bold text-stage-100">{t}</p>
+              <p className="mt-2 text-sm leading-relaxed text-stage-400">{b}</p>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   )

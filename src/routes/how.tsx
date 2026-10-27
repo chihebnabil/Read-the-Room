@@ -44,6 +44,14 @@ function How() {
         <li>😬 <b>Risky</b>: everything in between.</li>
       </ul>
 
+      <h2 className="display mt-14 text-3xl text-stage-100">Use it from your own agent</h2>
+      <p className="mt-3 text-stage-300">
+        Read the Room is also an MCP server, so Claude, Cursor or any MCP client can call the same Qloo tools the Road Manager uses:
+        <code className="mx-1 text-bulb">score_references</code>, <code className="mx-1 text-bulb">find_swaps</code>,
+        <code className="mx-1 text-bulb">city_favorites</code> and <code className="mx-1 text-bulb">compare_cities</code>.
+      </p>
+      <pre className="panel mt-4 overflow-x-auto p-4 font-mono text-xs text-stage-300">{`claude mcp add --transport http read-the-room ${typeof window === 'undefined' ? 'https://<your-deployment>' : window.location.origin}/api/mcp`}</pre>
+
       <h2 className="display mt-14 text-3xl text-stage-100">What it does not claim</h2>
       <ul className="mt-4 list-disc space-y-2 pl-5 text-sm text-stage-300">
         <li>Qloo results describe what groups tend to like, not what any one person in the room will do.</li>

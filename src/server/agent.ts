@@ -35,9 +35,9 @@ const TOOLS = {
   },
 } satisfies Record<string, Omit<ToolSpec, 'name'>>
 
-type ToolName = keyof typeof TOOLS
+export type ToolName = keyof typeof TOOLS
 
-const SPECS: ToolSpec[] = Object.entries(TOOLS).map(([name, t]) => ({ name, ...t }))
+export const SPECS: ToolSpec[] = Object.entries(TOOLS).map(([name, t]) => ({ name, ...t }))
 
 const pct = (n: number | null) => (n === null ? null : Math.round(n * 100))
 
@@ -46,7 +46,7 @@ async function resolve(r: { name: string; kind: Kind }, receipts: Receipt[]) {
   return found[0] ?? null
 }
 
-async function runTool(name: ToolName, args: unknown, receipts: Receipt[]): Promise<{ result: unknown; summary: string }> {
+export async function runTool(name: ToolName, args: unknown, receipts: Receipt[]): Promise<{ result: unknown; summary: string }> {
   switch (name) {
     case 'score_references': {
       const a = TOOLS.score_references.parameters.parse(args)
