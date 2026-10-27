@@ -3,9 +3,10 @@ import { CITIES, TOUR_DEFAULT } from '~/lib/presets'
 import { roomScore, verdictFor } from '~/lib/scoring'
 import { AGE_LABEL, KIND_LABEL, VERDICT_META, type Kind, type ResolvedReference, type Swap, type Verdict } from '~/lib/types'
 import type { ReadingState } from '~/lib/useReading'
+import { RoadManager } from './RoadManager'
 import { Bar, Gauge, KindTag, Spinner, VerdictBadge, pct, signed } from './ui'
 
-type Tab = 'set' | 'rewrite' | 'crowd' | 'tour' | 'receipts'
+type Tab = 'set' | 'rewrite' | 'crowd' | 'tour' | 'manager' | 'receipts'
 
 function swapVerdict(s: Swap | undefined): Verdict | null {
   if (!s?.chosen) return null
@@ -102,6 +103,7 @@ export function Report({ state, onTour }: { state: ReadingState; onTour: (cities
             ['rewrite', 'Rewritten set'],
             ['crowd', 'Crowd work'],
             ['tour', 'Tour map'],
+            ['manager', 'Ask the road manager'],
             ['receipts', `Receipts (${state.receipts.length})`],
           ] as [Tab, string][]
         ).map(([id, label]) => (
@@ -129,6 +131,9 @@ export function Report({ state, onTour }: { state: ReadingState; onTour: (cities
       {tab === 'rewrite' && <RewriteView state={state} rejected={rejected} />}
       {tab === 'crowd' && <CrowdView state={state} />}
       {tab === 'tour' && <TourView state={state} onTour={onTour} />}
+      <div className={tab === 'manager' ? '' : 'hidden'}>
+        <RoadManager state={state} />
+      </div>
       {tab === 'receipts' && <ReceiptsView state={state} />}
     </div>
   )

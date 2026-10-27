@@ -111,12 +111,16 @@ export async function toolTurn(messages: ChatMessage[], tools: ToolSpec[]) {
   const body = await post({
     messages,
     max_tokens: 3000,
-    tools: tools.map((t) => ({
-      type: 'function',
-      function: { name: t.name, description: t.description, parameters: strictSchema(z.toJSONSchema(t.parameters)) },
-    })),
-    tool_choice: 'auto',
-    provider: { require_parameters: true },
+    ...(tools.length > 0
+      ? {
+          tools: tools.map((t) => ({
+            type: 'function',
+            function: { name: t.name, description: t.description, parameters: strictSchema(z.toJSONSchema(t.parameters)) },
+          })),
+          tool_choice: 'auto',
+          provider: { require_parameters: true },
+        }
+      : {}),
   })
   const msg = body.choices?.[0]?.message
   return { content: msg?.content ?? null, toolCalls: msg?.tool_calls ?? [] }
