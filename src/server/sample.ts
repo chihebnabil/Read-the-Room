@@ -2,7 +2,7 @@
  * Sample mode: used only when no QLOO_API_KEY is set, so the app can be developed and previewed
  * without a key. Every number here is invented and the UI labels it "Sample data", never as Qloo's.
  */
-import type { Kind, QlooEntity, Receipt } from '~/lib/types'
+import type { Kind, QlooEntity, Receipt, TasteTag } from '~/lib/types'
 import type { Crowd } from './qloo'
 
 type Region = 'south' | 'northeast' | 'west' | 'midwest' | 'mountain'
@@ -236,6 +236,54 @@ export function favorites(kind: Kind, crowd: Crowd, receipts: Receipt[], take: n
     kind === 'place'
       ? { 'filter.type': 'urn:entity:place', 'filter.location.query': crowd.city, take }
       : { 'filter.type': `urn:entity:${kind}`, 'signal.location.query': crowd.city, 'filter.popularity.min': 0.6, take },
+    out.length,
+  )
+  return out
+}
+
+const TAGS: Record<string, Item[]> = {
+  'urn:tag:genre:media': [
+    { name: 'Dark Comedy', pop: 0.8, lean: { northeast: 0.25, west: 0.15, young: 0.1 } },
+    { name: 'Satire', pop: 0.8, lean: { northeast: 0.22, west: 0.18 } },
+    { name: 'Western', pop: 0.8, lean: { south: 0.3, mountain: 0.3, northeast: -0.2 } },
+    { name: 'Family', pop: 0.8, lean: { mountain: 0.3, south: 0.15, old: 0.1 } },
+    { name: 'Reality', pop: 0.8, lean: { south: 0.2, midwest: 0.1 } },
+    { name: 'Sitcom', pop: 0.8, lean: { midwest: 0.2 } },
+    { name: 'Indie', pop: 0.8, lean: { northeast: 0.25, west: 0.2, south: -0.15 } },
+    { name: 'Sports', pop: 0.8, lean: { south: 0.2, midwest: 0.2 } },
+    { name: 'Absurdist', pop: 0.8, lean: { northeast: 0.18, young: 0.2 } },
+    { name: 'Faith', pop: 0.8, lean: { south: 0.25, mountain: 0.25, northeast: -0.25 } },
+    { name: 'Crime', pop: 0.8, lean: { midwest: 0.15 } },
+  ],
+  'urn:tag:genre:music': [
+    { name: 'Country', pop: 0.8, lean: { south: 0.35, mountain: 0.2, northeast: -0.25 } },
+    { name: 'Indie Rock', pop: 0.8, lean: { northeast: 0.25, west: 0.2 } },
+    { name: 'Hip Hop', pop: 0.8, lean: { south: 0.15, northeast: 0.15, young: 0.2 } },
+    { name: 'Classic Rock', pop: 0.8, lean: { midwest: 0.2, old: 0.25 } },
+    { name: 'Americana', pop: 0.8, lean: { south: 0.25 } },
+    { name: 'Electronic', pop: 0.8, lean: { west: 0.2, young: 0.2 } },
+    { name: 'Jazz', pop: 0.8, lean: { northeast: 0.15, south: 0.1, old: 0.15 } },
+    { name: 'Pop', pop: 0.8, lean: { young: 0.2 } },
+  ],
+}
+
+export function tags(tagType: string, crowd: Crowd, receipts: Receipt[], take: number): TasteTag[] {
+  const region = REGION_OF[key(crowd.city)]
+  const out = (TAGS[tagType] ?? [])
+    .map((t) => {
+      const id = `sample:tag:${slug(t.name)}`
+      let a = 0.55 + (hash(id + key(crowd.city)) - 0.5) * 0.2 + (region ? (t.lean?.[region] ?? 0) : 0)
+      if (crowd.age && ['24_and_younger', '25_to_29'].includes(crowd.age)) a += t.lean?.young ?? 0
+      if (crowd.age && ['45_to_54', '55_and_older'].includes(crowd.age)) a += t.lean?.old ?? 0
+      return { id, name: t.name, affinity: Math.round(clamp(a) * 1000) / 1000 as number | null }
+    })
+    .sort((a, b) => (b.affinity ?? 0) - (a.affinity ?? 0))
+    .slice(0, take)
+  receipt(
+    receipts,
+    `Taste profile of ${crowd.city}: ${tagType.split(':').slice(-2).join(' ')}`,
+    '/v2/insights',
+    { 'filter.type': 'urn:tag', 'filter.tag.types': tagType, 'signal.location.query': crowd.city, 'signal.demographics.age': crowd.age ?? undefined, take },
     out.length,
   )
   return out

@@ -414,8 +414,35 @@ function CrowdView({ state }: { state: ReadingState }) {
       </div>
     )
   const kinds = Object.entries(cw.favorites).filter(([, v]) => v && v.length > 0) as [Kind, NonNullable<(typeof cw.favorites)[Kind]>][]
+  const profile = cw.profile.filter((p) => p.tags.length > 0)
   return (
     <div className="space-y-5">
+      {profile.length > 0 && (
+        <div className="panel p-6">
+          <p className="eyebrow">The room’s taste profile</p>
+          {cw.styleTip && <p className="mt-2 text-lg font-semibold leading-snug text-stage-100">{cw.styleTip}</p>}
+          <div className="mt-4 grid gap-5 md:grid-cols-2">
+            {profile.map((p) => (
+              <div key={p.tagType}>
+                <p className="text-xs font-semibold text-stage-400">{p.label} {state.crowd.city} over-indexes on</p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {p.tags.map((t, i) => (
+                    <span
+                      key={t.id}
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${
+                        i < 3 ? 'border-bulb/50 bg-bulb/10 text-bulb' : 'border-stage-700 text-stage-300'
+                      }`}
+                    >
+                      {t.name}
+                      <span className="font-mono text-[10px] opacity-70">{t.affinity === null ? '' : t.affinity.toFixed(2)}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="grid gap-4 md:grid-cols-2">
         {cw.openers.map((o, i) => (
           <div key={i} className="panel animate-rise p-5" style={{ animationDelay: `${i * 80}ms` }}>

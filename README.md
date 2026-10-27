@@ -37,6 +37,7 @@ The model never decides a verdict. It only reads the script and rewrites lines. 
 | Score it for tonight | `GET /v2/insights` with `filter.results.entities`, `signal.location.query`, `signal.demographics.age` | Affinity of the crowd for each reference. |
 | Nationwide baseline | same, with `signal.location.query=United States` | The gap between local and national is what makes a reference local. |
 | Find a swap | `GET /v2/insights` with `signal.interests.entities=<weak ref>`, `signal.location.query`, `filter.popularity.min=0.75` | Things like the weak reference that this crowd loves, limited to well-known ones so the room still gets it. |
+| Room taste profile | `GET /v2/insights` with `filter.type=urn:tag`, `filter.tag.types=urn:tag:genre:media` (and `genre:music`), `signal.location.query` | The genres and styles the crowd over-indexes on, turned into a delivery tip. |
 | Crowd work | `GET /v2/insights` with `filter.type=urn:entity:place` + `filter.location.query`, and TV, music, brands, movies by `signal.location.query` | What the city over-indexes on. |
 | Tour map | the scoring call for each city | Where the set plays best. |
 

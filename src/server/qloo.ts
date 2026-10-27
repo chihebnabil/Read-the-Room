@@ -1,4 +1,4 @@
-import type { AgeBand, Kind, QlooEntity, Receipt } from '~/lib/types'
+import type { AgeBand, Kind, QlooEntity, Receipt, TasteTag } from '~/lib/types'
 import * as sample from './sample'
 
 // Hackathon keys only work against this host.
@@ -209,4 +209,25 @@ export async function favoritesOf(
       : { 'filter.type': urn(kind), ...crowdSignals(crowd), 'filter.popularity.min': 0.6, take }
   const body = await get(`What ${crowd.city} loves: ${kind.replace('_', ' ')}`, '/v2/insights', params, receipts)
   return entityList(body).map((e) => ({ entity: toEntity(e, kind), affinity: num(e.query?.affinity) }))
+}
+
+/** Taste analysis: the descriptive tags (genres, styles) a crowd over-indexes on. */
+export async function crowdTags(tagType: string, crowd: Crowd, receipts: Receipt[], take = 10): Promise<TasteTag[]> {
+  if (!qlooIsLive()) return sample.tags(tagType, crowd, receipts, take)
+  const body = await get(
+    `Taste profile of ${crowd.city}: ${tagType.split(':').slice(-2).join(' ')}`,
+    '/v2/insights',
+    { 'filter.type': 'urn:tag', 'filter.tag.types': tagType, ...crowdSignals(crowd), take },
+    receipts,
+  )
+  const tags: Json[] = Array.isArray(body?.results?.tags) ? body.results.tags : entityList(body)
+  const seen = new Set<string>()
+  return tags
+    .map((t) => ({ id: String(t.tag_id ?? t.id ?? t.name), name: String(t.name ?? '').replace(/\s+/g, ' ').trim(), affinity: num(t.query?.affinity) }))
+    .filter((t) => {
+      const k = t.name.toLowerCase()
+      if (!t.name || seen.has(k) || k === crowd.city.toLowerCase()) return false
+      seen.add(k)
+      return true
+    })
 }

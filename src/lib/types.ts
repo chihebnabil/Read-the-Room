@@ -120,9 +120,25 @@ export interface Favorite {
   local: number | null
 }
 
+export interface TasteTag {
+  id: string
+  name: string
+  affinity: number | null
+}
+
+export interface TasteProfile {
+  label: string
+  tagType: string
+  tags: TasteTag[]
+}
+
 export interface CrowdWork {
   favorites: Partial<Record<Kind, Favorite[]>>
   openers: { line: string; uses: string[] }[]
+  /** Descriptive tags the crowd over-indexes on (Qloo taste analysis), e.g. film and TV genres. */
+  profile: TasteProfile[]
+  /** One-line delivery tip grounded in the profile. */
+  styleTip: string | null
 }
 
 export interface TourCell {

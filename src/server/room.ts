@@ -19,7 +19,7 @@ import {
   type TourCell,
 } from '~/lib/types'
 import { AIError, structuredChat } from './llm'
-import { NATIONAL, affinityFor, favoritesOf, qlooIsLive, searchEntity, similarForCrowd, type Crowd } from './qloo'
+import { NATIONAL, affinityFor, crowdTags, favoritesOf, qlooIsLive, searchEntity, similarForCrowd, type Crowd } from './qloo'
 
 const mode = () => (qlooIsLive() ? ('live' as const) : ('sample' as const))
 const aiReady = () => Boolean(process.env.OPENROUTER_API_KEY)
@@ -330,7 +330,12 @@ export const swapFn = createServerFn({ method: 'POST' })
 
 // ---------- 6. Crowd work: what this room loves ----------
 
-const OpenerSchema = z.object({ openers: z.array(z.object({ line: z.string(), uses: z.array(z.string()) })) })
+const OpenerSchema = z.object({ openers: z.array(z.object({ line: z.string(), uses: z.array(z.string()) })), styleTip: z.string() })
+
+const PROFILE_TYPES = [
+  { label: 'Film & TV genres', tagType: 'urn:tag:genre:media' },
+  { label: 'Music genres', tagType: 'urn:tag:genre:music' },
+]
 
 const FAVORITE_KINDS: Kind[] = ['place', 'tv_show', 'artist', 'brand', 'movie']
 
@@ -339,12 +344,20 @@ export const crowdFn = createServerFn({ method: 'POST' })
   .handler(async ({ data }): Promise<{ crowdWork: CrowdWork; receipts: Receipt[]; mode: 'live' | 'sample' }> => {
     const receipts: Receipt[] = []
     const favorites: CrowdWork['favorites'] = {}
-    await Promise.all(
-      FAVORITE_KINDS.map(async (kind) => {
-        const list = await favoritesOf(kind, data.crowd, receipts).catch(() => [])
-        favorites[kind] = list.map((f): Favorite => ({ entity: f.entity, local: f.affinity }))
-      }),
-    )
+    const [, profile] = await Promise.all([
+      Promise.all(
+        FAVORITE_KINDS.map(async (kind) => {
+          const list = await favoritesOf(kind, data.crowd, receipts).catch(() => [])
+          favorites[kind] = list.map((f): Favorite => ({ entity: f.entity, local: f.affinity }))
+        }),
+      ),
+      Promise.all(PROFILE_TYPES.map(async (p) => ({ ...p, tags: await crowdTags(p.tagType, data.crowd, receipts, 8).catch(() => []) }))),
+    ])
+    let styleTip: string | null = null
+    const profileText = profile
+      .filter((p) => p.tags.length)
+      .map((p) => `${p.label}: ${p.tags.map((t) => `${t.name} (${t.affinity === null ? 'n/a' : Math.round(t.affinity * 100)})`).join(', ')}`)
+      .join('\n')
     let openers: CrowdWork['openers'] = []
     const names = FAVORITE_KINDS.flatMap((k) => (favorites[k] ?? []).slice(0, 4).map((f) => `${f.entity.name} (${k})`))
     if (aiReady() && names.length > 0) {
@@ -356,12 +369,14 @@ export const crowdFn = createServerFn({ method: 'POST' })
             {
               role: 'system',
               content:
-                'You write crowd-work openers for stand-up comedians: short, warm, local questions or one-liners that get the room talking in the first minute. Write 4 openers (max 22 words each) that only use the listed local favorites. uses: the exact names used. Keep it friendly, never mean about the city.',
+                'You write crowd-work openers for stand-up comedians: short, warm, local questions or one-liners that get the room talking in the first minute. Write 4 openers (max 22 words each) that only use the listed local favorites. uses: the exact names used. Keep it friendly, never mean about the city. styleTip: one sentence (max 25 words) of delivery advice for this room based only on its genre profile, naming the genres you used.',
             },
-            { role: 'user', content: `Tonight: ${describeCrowd(data.crowd)}.\nWhat this crowd over-indexes on (from Qloo):\n${names.join('\n')}` },
+            { role: 'user', content: `Tonight: ${describeCrowd(data.crowd)}.\nWhat this crowd over-indexes on (from Qloo):\n${names.join('\n')}\n\nGenre profile (from Qloo):\n${profileText || 'n/a'}`,
+            },
           ],
         })
         openers = out.openers.slice(0, 4)
+        styleTip = profileText ? out.styleTip.trim() || null : null
       } catch {
         openers = []
       }
@@ -376,7 +391,7 @@ export const crowdFn = createServerFn({ method: 'POST' })
         artist && { line: `If ${artist} walked in right now, who in this room is crying first?`, uses: [artist] },
       ].filter(Boolean) as CrowdWork['openers']
     }
-    return { crowdWork: { favorites, openers }, receipts, mode: mode() }
+    return { crowdWork: { favorites, openers, profile, styleTip }, receipts, mode: mode() }
   })
 
 // ---------- 7. Tour mode: the same set across cities ----------
