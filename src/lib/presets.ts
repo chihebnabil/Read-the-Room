@@ -1,0 +1,80 @@
+import type { AgeBand, Kind } from './types'
+
+export interface Preset {
+  id: string
+  label: string
+  blurb: string
+  text: string
+  /** Pre-tagged references so the demo does not depend on the model's extraction. [line, surface, name, kind, role] */
+  refs: [number, string, string, Kind, string][]
+}
+
+export const PRESETS: Preset[] = [
+  {
+    id: 'standup',
+    label: 'Stand-up set',
+    blurb: '12 lines, 11 references',
+    text: [
+      "I moved in with my girlfriend and found out she watches Yellowstone like it's a documentary about her family.",
+      "She thinks Kevin Costner is just a cowboy who's bad at texting back.",
+      'Our first date was at Whole Foods. I paid nine dollars for a water that had been to college.',
+      "Her dad drives a Tesla and still calls it 'the truck'.",
+      "I tried to bond with him over Nickelback. He looked at me like I'd brought a casserole to a funeral.",
+      "Now I play Fortnite with her twelve-year-old cousin, who has called me things my therapist hasn't.",
+      "We did a road trip and stopped at Buc-ee's. It's not a gas station, it's a theme park for beef jerky.",
+      'A man in a Patagonia vest asked me to keep my voice down in the jerky aisle.',
+      "Her mom only listens to Taylor Swift, and she grades me like I'm one of the exes.",
+      "For our anniversary we went to Olive Garden, because I wanted unlimited breadsticks and limited conversation.",
+      'I fell asleep to The Joe Rogan Experience and woke up owning an ice bath.',
+      "Anyway, we're very happy. Goodnight!",
+    ].join('\n'),
+    refs: [
+      [0, 'Yellowstone', 'Yellowstone', 'tv_show', 'a show her family-loving girlfriend treats as gospel'],
+      [1, 'Kevin Costner', 'Kevin Costner', 'person', 'a rugged leading man she has a crush on'],
+      [2, 'Whole Foods', 'Whole Foods Market', 'brand', 'an overpriced, bougie grocery store'],
+      [3, 'Tesla', 'Tesla', 'brand', 'a fancy, techy car that clashes with a dad who wants a truck'],
+      [4, 'Nickelback', 'Nickelback', 'artist', 'a band people love to hate'],
+      [5, 'Fortnite', 'Fortnite', 'video_game', 'a game kids play and trash-talk in'],
+      [6, "Buc-ee's", "Buc-ee's", 'brand', 'a giant, over-the-top road-trip stop'],
+      [7, 'Patagonia', 'Patagonia', 'brand', 'an outdoorsy status brand worn by uptight people'],
+      [8, 'Taylor Swift', 'Taylor Swift', 'artist', 'a pop star famous for songs about exes'],
+      [9, 'Olive Garden', 'Olive Garden', 'brand', 'a cheesy chain restaurant for a cheap date'],
+      [10, 'The Joe Rogan Experience', 'The Joe Rogan Experience', 'podcast', 'a podcast that talks you into wellness fads'],
+    ],
+  },
+  {
+    id: 'keynote',
+    label: 'Keynote opener',
+    blurb: 'Sales kickoff, 7 references',
+    text: [
+      "Good morning! I know some of you only came for the coffee, and honestly, same.",
+      "Last year our team had more drama than an episode of Succession.",
+      'But we turned it around, and we did it like Ted Lasso: with optimism and a lot of biscuits.',
+      "Our pipeline grew faster than a Peloton instructor's ego.",
+      'And our new product launch had the energy of Top Gun: Maverick: loud, expensive, and nobody aged.',
+      "We pitched like we were on Shark Tank, minus the part where Mark Cuban buys us.",
+      'This year, we are going to run the business the way Beyoncé runs a tour: on time, flawless, and sold out.',
+      'Let us get to work.',
+    ].join('\n'),
+    refs: [
+      [1, 'Succession', 'Succession', 'tv_show', 'a drama about a dysfunctional company'],
+      [2, 'Ted Lasso', 'Ted Lasso', 'tv_show', 'an optimistic coach who believes in his team'],
+      [3, 'Peloton', 'Peloton', 'brand', 'a fitness brand with famously intense instructors'],
+      [4, 'Top Gun: Maverick', 'Top Gun: Maverick', 'movie', 'a loud, expensive blockbuster with ageless stars'],
+      [5, 'Shark Tank', 'Shark Tank', 'tv_show', 'a show where founders pitch investors'],
+      [5, 'Mark Cuban', 'Mark Cuban', 'person', 'a famous investor'],
+      [6, 'Beyoncé', 'Beyoncé', 'artist', 'a perfectionist superstar whose tours sell out'],
+    ],
+  },
+]
+
+export const CITIES = ['Nashville', 'Brooklyn', 'Austin', 'Salt Lake City', 'Los Angeles', 'Chicago', 'Boston', 'Atlanta']
+
+export const TOUR_DEFAULT = ['Nashville', 'Brooklyn', 'Salt Lake City', 'Los Angeles', 'Chicago', 'Atlanta']
+
+export const VENUES: { id: string; label: string; age: AgeBand | null }[] = [
+  { id: 'club', label: 'Comedy club', age: null },
+  { id: 'college', label: 'College show', age: '24_and_younger' },
+  { id: 'corporate', label: 'Corporate gig', age: '35_to_44' },
+  { id: 'casino', label: 'Casino theater', age: '55_and_older' },
+]
