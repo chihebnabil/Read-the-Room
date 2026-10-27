@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HowRouteImport } from './routes/how'
+import { Route as LabRouteImport } from './routes/lab'
 import { Route as ApiMcpRouteImport } from './routes/api/mcp'
 
 const IndexRoute = IndexRouteImport.update({
@@ -23,6 +24,11 @@ const HowRoute = HowRouteImport.update({
   path: '/how',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LabRoute = LabRouteImport.update({
+  id: '/lab',
+  path: '/lab',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMcpRoute = ApiMcpRouteImport.update({
   id: '/api/mcp',
   path: '/api/mcp',
@@ -32,30 +38,34 @@ const ApiMcpRoute = ApiMcpRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/how': typeof HowRoute
+  '/lab': typeof LabRoute
   '/api/mcp': typeof ApiMcpRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/how': typeof HowRoute
+  '/lab': typeof LabRoute
   '/api/mcp': typeof ApiMcpRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/how': typeof HowRoute
+  '/lab': typeof LabRoute
   '/api/mcp': typeof ApiMcpRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/how' | '/api/mcp'
+  fullPaths: '/' | '/how' | '/lab' | '/api/mcp'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/how' | '/api/mcp'
-  id: '__root__' | '/' | '/how' | '/api/mcp'
+  to: '/' | '/how' | '/lab' | '/api/mcp'
+  id: '__root__' | '/' | '/how' | '/lab' | '/api/mcp'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   HowRoute: typeof HowRoute
+  LabRoute: typeof LabRoute
   ApiMcpRoute: typeof ApiMcpRoute
 }
 
@@ -75,6 +85,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HowRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lab': {
+      id: '/lab'
+      path: '/lab'
+      fullPath: '/lab'
+      preLoaderRoute: typeof LabRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/mcp': {
       id: '/api/mcp'
       path: '/api/mcp'
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   HowRoute: HowRoute,
+  LabRoute: LabRoute,
   ApiMcpRoute: ApiMcpRoute,
 }
 export const routeTree = rootRouteImport

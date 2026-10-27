@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { THRESHOLDS } from '~/lib/scoring'
 
@@ -12,6 +13,8 @@ const calls = [
 ]
 
 function How() {
+  const [origin, setOrigin] = useState('https://<your-deployment>')
+  useEffect(() => setOrigin(window.location.origin), [])
   return (
     <div className="mx-auto max-w-4xl px-6 py-16">
       <p className="eyebrow">How it works</p>
@@ -50,7 +53,7 @@ function How() {
         <code className="mx-1 text-bulb">score_references</code>, <code className="mx-1 text-bulb">find_swaps</code>,
         <code className="mx-1 text-bulb">city_favorites</code> and <code className="mx-1 text-bulb">compare_cities</code>.
       </p>
-      <pre className="panel mt-4 overflow-x-auto p-4 font-mono text-xs text-stage-300">{`claude mcp add --transport http read-the-room ${typeof window === 'undefined' ? 'https://<your-deployment>' : window.location.origin}/api/mcp`}</pre>
+      <pre className="panel mt-4 overflow-x-auto p-4 font-mono text-xs text-stage-300">{`claude mcp add --transport http read-the-room ${origin}/api/mcp`}</pre>
 
       <h2 className="display mt-14 text-3xl text-stage-100">What it does not claim</h2>
       <ul className="mt-4 list-disc space-y-2 pl-5 text-sm text-stage-300">

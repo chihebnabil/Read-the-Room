@@ -139,7 +139,7 @@ const EntityInput = z.object({
 
 const ScoreRef = z.object({ id: z.string(), kind: kindEnum, entity: EntityInput.nullable() })
 
-async function scoreRefs(refs: z.infer<typeof ScoreRef>[], crowd: Crowd, baselines: Map<string, number | null> | null, receipts: Receipt[]) {
+export async function scoreRefs(refs: z.infer<typeof ScoreRef>[], crowd: Crowd, baselines: Map<string, number | null> | null, receipts: Receipt[]) {
   const byKind = new Map<Kind, string[]>()
   for (const r of refs) if (r.entity) byKind.set(r.kind, [...(byKind.get(r.kind) ?? []), r.entity.id])
 
@@ -182,31 +182,36 @@ const GuessSchema = z.object({
   guesses: z.array(z.object({ refId: z.string(), verdict: z.enum(['kills', 'risky', 'dies']), reason: z.string() })),
 })
 
+export async function guessVerdicts(crowd: z.infer<typeof CrowdInput>, references: { id: string; name: string; kind: Kind }[]): Promise<Guess[] | null> {
+  if (!aiReady()) return null
+  try {
+    const out = await structuredChat({
+      name: 'guesses',
+      schema: GuessSchema,
+      messages: [
+        {
+          role: 'system',
+          content:
+            'You are an AI assistant with no access to data. Using only your general knowledge, predict whether each cultural reference would land with a live audience. Answer "kills", "risky" or "dies" and give a one-sentence reason (max 18 words).',
+        },
+        {
+          role: 'user',
+          content: `Tonight: ${describeCrowd(crowd)}.\nReferences:\n${references.map((r) => `${r.id}: ${r.name} (${r.kind})`).join('\n')}`,
+        },
+      ],
+    })
+    const ids = new Set(references.map((r) => r.id))
+    return out.guesses.filter((g) => ids.has(g.refId))
+  } catch {
+    return null
+  }
+}
+
 export const guessFn = createServerFn({ method: 'POST' })
   .validator(z.object({ crowd: CrowdInput, references: z.array(z.object({ id: z.string(), name: z.string(), kind: kindEnum })).max(40) }))
   .handler(async ({ data }): Promise<{ guesses: Guess[]; available: boolean }> => {
-    if (!aiReady()) return { guesses: [], available: false }
-    try {
-      const out = await structuredChat({
-        name: 'guesses',
-        schema: GuessSchema,
-        messages: [
-          {
-            role: 'system',
-            content:
-              'You are an AI assistant with no access to data. Using only your general knowledge, predict whether each cultural reference would land with a live audience. Answer "kills", "risky" or "dies" and give a one-sentence reason (max 18 words).',
-          },
-          {
-            role: 'user',
-            content: `Tonight: ${describeCrowd(data.crowd)}.\nReferences:\n${data.references.map((r) => `${r.id}: ${r.name} (${r.kind})`).join('\n')}`,
-          },
-        ],
-      })
-      const ids = new Set(data.references.map((r) => r.id))
-      return { guesses: out.guesses.filter((g) => ids.has(g.refId)), available: true }
-    } catch {
-      return { guesses: [], available: false }
-    }
+    const guesses = await guessVerdicts(data.crowd, data.references)
+    return { guesses: guesses ?? [], available: guesses !== null }
   })
 
 // ---------- 5. Find swaps the room loves, and rewrite the lines ----------

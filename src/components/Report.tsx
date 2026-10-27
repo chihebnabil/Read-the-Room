@@ -82,8 +82,10 @@ export function Report({ state, onTour }: { state: ReadingState; onTour: (cities
         {state.guessAvailable && disagreements.length > 0 && (
           <div className="border-t border-stage-800 bg-stage-850 px-6 py-4">
             <p className="text-sm text-stage-200">
-              <span className="font-bold text-bulb">The AI on its own got {disagreements.length} of {Object.keys(state.guesses).length} calls wrong.</span>{' '}
-              Without taste data it guessed:{' '}
+              <span className="font-bold text-bulb">
+                An AI with no data disagreed with Qloo on {disagreements.length} of {Object.keys(state.guesses).length} references.
+              </span>{' '}
+              Its guess → what Qloo measured:{' '}
               {disagreements.slice(0, 3).map((r, i) => (
                 <button key={r.id} onClick={() => { setSelected(r.id); setTab('set') }} className="underline decoration-stage-500 underline-offset-2 hover:text-stage-100">
                   {r.name} {VERDICT_META[state.guesses[r.id].verdict].emoji}→{VERDICT_META[state.scores[r.id].verdict].emoji}
