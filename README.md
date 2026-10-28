@@ -8,12 +8,14 @@ Paste a set, speech or toast and pick a city (and optionally the room: college s
 
 1. **Finds** every cultural reference in the text: TV shows, artists, brands, places, people, podcasts, games.
 2. **Matches** each one to an entity in Qloo's taste graph.
-3. **Scores** it for tonight's crowd against a nationwide baseline: 🔥 kills, 😬 risky, 💀 dies here.
+3. **Scores** it for tonight's crowd against the same reference in 7 other US cities: 🔥 kills, 😬 risky, 💀 dies here.
 4. **Swaps** weak references for well-known ones this crowd actually loves, and rewrites the line so the joke still works.
 5. **Builds a crowd-work cheat sheet** from what the city over-indexes on.
 6. **Tour map**: the same set scored across up to 8 cities, with the city where it plays best.
 
 It also asks a model with no data to guess the same verdicts, and shows where the guess and Qloo disagree. That is the point of the project: without Qloo, an AI can only guess in stereotypes.
+
+**The benchmark** (`/lab`): every reference in both sample scripts, in 8 cities. On live Qloo data, a model with no data disagreed with Qloo on **51% of 130 calls**, called 🔥 twice as often as the data supports (70 vs. 35), and said "kills" 9 times where Qloo measured "dies".
 
 ### The Road Manager
 
@@ -31,13 +33,30 @@ claude mcp add --transport http read-the-room https://<your-deployment>/api/mcp
 
 The model never decides a verdict. It only reads the script and rewrites lines. Every verdict comes from Qloo numbers through a fixed rule ([`src/lib/scoring.ts`](src/lib/scoring.ts)), and every number links to the exact Qloo request behind it (the **Receipts** tab).
 
+### How a verdict is computed
+
+Qloo location affinities for well-known names sit between 0.9 and 0.99999, so the app reads them on a log scale:
+
+```
+strength = -log10(1 - affinity) / 5        # 0.99 -> 40/100, 0.999 -> 60/100, 0.9999 -> 80/100
+lift     = strength here - median strength in the other panel cities
+```
+
+A reference is only ever compared with itself in other cities, never with other references. If Qloo leaves a reference out of a city's results, it measured no audience there; that counts as a measured absence (0) when other cities do have an audience, and as "no data" when none does.
+
+- 🔥 **Kills**: at least 30/100 here, and either 5+ points above its median in the other cities or a regional favorite (measured in at most a third of them).
+- 💀 **Dies**: 5+ points below its median, or no measurable audience here while other cities have one.
+- 😬 **Risky**: about as strong here as anywhere, or a household name (top 0.5% popularity) this crowd does not over-index on: recognized, not loved.
+
+The comparison panel is Nashville, Brooklyn, Austin, Salt Lake City, Los Angeles, Chicago, Boston and Atlanta.
+
 | Step | Qloo call | Why |
 | --- | --- | --- |
 | Find the reference | `GET /search?query=…&types=urn:entity:<kind>` | Resolve the name in the script to one entity. Exact names win over fuzzy top hits. |
 | Score it for tonight | `GET /v2/insights` with `filter.results.entities`, `signal.location.query`, `signal.demographics.age` | Affinity of the crowd for each reference. |
-| Nationwide baseline | same, with `signal.location.query=United States` | The gap between local and national is what makes a reference local. |
-| Find a swap | `GET /v2/insights` with `signal.interests.entities=<weak ref>`, `signal.location.query`, `filter.popularity.min=0.75` | Things like the weak reference that this crowd loves, limited to well-known ones so the room still gets it. |
-| Room taste profile | `GET /v2/insights` with `filter.type=urn:tag`, `filter.tag.types=urn:tag:genre:media` (and `genre:music`), `signal.location.query` | The genres and styles the crowd over-indexes on, turned into a delivery tip. |
+| Compare with other cities | same, once per panel city | The baseline: the same reference in the typical city. The gap is what makes a reference local. |
+| Find a swap | `GET /v2/insights` with `signal.interests.entities=<weak ref>`, `signal.location.query`, `filter.popularity.min=0.75`, then the two scoring calls above for every candidate | Things like the weak reference, limited to well-known ones so the room still gets it, and scored exactly like the original. |
+| Room taste profile | `GET /v2/insights` with `filter.type=urn:tag`, `filter.tag.types=urn:tag:theme:qloo` + `filter.parents.types=urn:entity:tv_show` (and `urn:tag:genre:music` for artists), `signal.location.query` | The TV themes and music genres the crowd over-indexes on, turned into a delivery tip. |
 | Crowd work | `GET /v2/insights` with `filter.type=urn:entity:place` + `filter.location.query`, and TV, music, brands, movies by `signal.location.query` | What the city over-indexes on. |
 | Tour map | the scoring call for each city | Where the set plays best. |
 
@@ -72,6 +91,8 @@ Vercel: import the repo and set `QLOO_API_KEY`, `QLOO_BASE_URL`, `OPENROUTER_API
 - Affinity is not laughter. A reference the crowd loves still needs a good joke around it.
 - No personal data is sent to Qloo: only entity names, a city and an optional age band.
 - Qloo responses are cached in server memory only (allowed by the hackathon rules) and never committed.
+- Requests are paced under the key's 10-per-second limit, so a rate-limited call is never mistaken for "no audience here".
+- Some entities (for example a few chains and actors) have no location data in Qloo; they show as "No data" instead of a guess.
 
 ## License
 

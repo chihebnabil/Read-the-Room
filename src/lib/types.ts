@@ -67,12 +67,15 @@ export type Verdict = 'kills' | 'risky' | 'dies' | 'unknown'
 
 export interface Score {
   refId: string
-  /** Affinity of the entity for tonight's crowd (city, optionally age). 0..1 */
+  /** Strength of the entity with tonight's crowd (city, optionally age), 0..1; 0 when Qloo measured no audience here. */
   local: number | null
-  /** Same entity, nationwide baseline. 0..1 */
+  /** Its median strength across the other panel cities. */
   baseline: number | null
   /** local - baseline */
   lift: number | null
+  /** In how many of the other panel cities Qloo measured an audience. */
+  seen: number
+  of: number
   verdict: Verdict
   why: string
 }
@@ -81,6 +84,7 @@ export interface SwapCandidate {
   entity: QlooEntity
   local: number | null
   lift: number | null
+  verdict: Verdict
 }
 
 export interface Swap {

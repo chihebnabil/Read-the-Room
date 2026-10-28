@@ -20,7 +20,7 @@ export interface Step {
 const STEPS: Omit<Step, 'status'>[] = [
   { id: 'extract', label: 'Find every cultural reference in the set' },
   { id: 'resolve', label: 'Match each one to Qloo’s taste graph' },
-  { id: 'score', label: 'Score them for tonight’s crowd vs. nationwide' },
+  { id: 'score', label: 'Score them for tonight’s crowd vs. other US cities' },
   { id: 'swap', label: 'Find swaps this crowd loves and rewrite the lines' },
   { id: 'guess', label: 'Ask a model with no data what it would guess' },
   { id: 'crowd', label: 'Build the crowd-work cheat sheet' },
@@ -127,6 +127,7 @@ export function useReading() {
                   references: targets.map((r) => ({
                     id: r.id,
                     local: scores[r.id]?.local ?? null,
+                    lift: scores[r.id]?.lift ?? null,
                     surface: r.surface,
                     role: r.role,
                     kind: r.kind,
@@ -185,9 +186,6 @@ export function useReading() {
             cities,
             age: s.crowd.age,
             references: s.refs.map((r) => ({ id: r.id, kind: r.kind, entity: r.entity })),
-            baselines: s.refs
-              .filter((r) => r.entity && s.scores[r.id])
-              .map((r) => [r.entity!.id, s.scores[r.id].baseline] as [string, number | null]),
           },
         })
         if (runId.current !== id) return

@@ -16,36 +16,36 @@ export const PRESETS: Preset[] = [
     blurb: '12 lines, 11 references',
     text: [
       "I moved in with my girlfriend and found out she watches Yellowstone like it's a documentary about her family.",
-      "She thinks Kevin Costner is just a cowboy who's bad at texting back.",
+      "She quotes Matthew McConaughey like he's a life coach. Alright, alright, alright.",
       'Our first date was at Whole Foods. I paid nine dollars for a water that had been to college.',
-      "Her dad drives a Tesla and still calls it 'the truck'.",
+      'Her dad owns a YETI cooler that costs more than my car, and honestly he trusts it more than me.',
       "I tried to bond with him over Nickelback. He looked at me like I'd brought a casserole to a funeral.",
       "Now I play Fortnite with her twelve-year-old cousin, who has called me things my therapist hasn't.",
-      "We did a road trip and stopped at Buc-ee's. It's not a gas station, it's a theme park for beef jerky.",
-      'A man in a Patagonia vest asked me to keep my voice down in the jerky aisle.',
+      'On our road trip she made us stop at every H-E-B like it was a national park.',
+      'A man in a Patagonia vest asked me to keep my voice down in the tortilla aisle.',
       "Her mom only listens to Taylor Swift, and she grades me like I'm one of the exes.",
-      "For our anniversary we went to Olive Garden, because I wanted unlimited breadsticks and limited conversation.",
+      'For our anniversary we went to Whataburger, because nothing says forever like a Number 1 at two in the morning.',
       'I fell asleep to The Joe Rogan Experience and woke up owning an ice bath.',
       "Anyway, we're very happy. Goodnight!",
     ].join('\n'),
     refs: [
       [0, 'Yellowstone', 'Yellowstone', 'tv_show', 'a show her family-loving girlfriend treats as gospel'],
-      [1, 'Kevin Costner', 'Kevin Costner', 'person', 'a rugged leading man she has a crush on'],
+      [1, 'Matthew McConaughey', 'Matthew McConaughey', 'person', 'a laid-back celebrity she treats like a guru'],
       [2, 'Whole Foods', 'Whole Foods Market', 'brand', 'an overpriced, bougie grocery store'],
-      [3, 'Tesla', 'Tesla', 'brand', 'a fancy, techy car that clashes with a dad who wants a truck'],
+      [3, 'YETI', 'YETI', 'brand', 'an expensive status purchase a dad is proud of'],
       [4, 'Nickelback', 'Nickelback', 'artist', 'a band people love to hate'],
       [5, 'Fortnite', 'Fortnite', 'video_game', 'a game kids play and trash-talk in'],
-      [6, "Buc-ee's", "Buc-ee's", 'brand', 'a giant, over-the-top road-trip stop'],
+      [6, 'H-E-B', 'H-E-B', 'brand', 'a beloved local chain people treat like a landmark'],
       [7, 'Patagonia', 'Patagonia', 'brand', 'an outdoorsy status brand worn by uptight people'],
       [8, 'Taylor Swift', 'Taylor Swift', 'artist', 'a pop star famous for songs about exes'],
-      [9, 'Olive Garden', 'Olive Garden', 'brand', 'a cheesy chain restaurant for a cheap date'],
+      [9, 'Whataburger', 'Whataburger', 'brand', 'a cheap, beloved late-night fast-food spot for a date'],
       [10, 'The Joe Rogan Experience', 'The Joe Rogan Experience', 'podcast', 'a podcast that talks you into wellness fads'],
     ],
   },
   {
     id: 'keynote',
     label: 'Keynote opener',
-    blurb: 'Sales kickoff, 7 references',
+    blurb: 'Sales kickoff, 6 references',
     text: [
       "Good morning! I know some of you only came for the coffee, and honestly, same.",
       "Last year our team had more drama than an episode of Succession.",
@@ -61,7 +61,6 @@ export const PRESETS: Preset[] = [
       [2, 'Ted Lasso', 'Ted Lasso', 'tv_show', 'an optimistic coach who believes in his team'],
       [3, 'Peloton', 'Peloton', 'brand', 'a fitness brand with famously intense instructors'],
       [4, 'Top Gun: Maverick', 'Top Gun: Maverick', 'movie', 'a loud, expensive blockbuster with ageless stars'],
-      [5, 'Shark Tank', 'Shark Tank', 'tv_show', 'a show where founders pitch investors'],
       [5, 'Mark Cuban', 'Mark Cuban', 'person', 'a famous investor'],
       [6, 'Beyoncé', 'Beyoncé', 'artist', 'a perfectionist superstar whose tours sell out'],
     ],
@@ -70,7 +69,7 @@ export const PRESETS: Preset[] = [
 
 export const CITIES = ['Nashville', 'Brooklyn', 'Austin', 'Salt Lake City', 'Los Angeles', 'Chicago', 'Boston', 'Atlanta']
 
-export const TOUR_DEFAULT = ['Nashville', 'Brooklyn', 'Salt Lake City', 'Los Angeles', 'Chicago', 'Atlanta']
+export const TOUR_DEFAULT = ['Austin', 'Nashville', 'Brooklyn', 'Salt Lake City', 'Los Angeles', 'Chicago']
 
 export const VENUES: { id: string; label: string; age: AgeBand | null }[] = [
   { id: 'club', label: 'Comedy club', age: null },

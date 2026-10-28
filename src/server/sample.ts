@@ -48,14 +48,14 @@ const CATALOG: Partial<Record<Kind, Item[]>> = {
   brand: [
     { name: 'Whole Foods Market', pop: 0.92, lean: { northeast: 0.2, west: 0.22, south: -0.12 } },
     { name: 'Cracker Barrel', pop: 0.9, lean: { south: 0.3, old: 0.2, west: -0.25, northeast: -0.18 } },
-    { name: "Buc-ee's", pop: 0.86, lean: { south: 0.36, northeast: -0.3, west: -0.25 } },
+    { name: 'H-E-B', pop: 0.95, lean: { south: 0.36, northeast: -0.3, west: -0.25 } },
     { name: 'Peloton', pop: 0.86, lean: { northeast: 0.22, west: 0.1 } },
     { name: 'Patagonia', pop: 0.9, lean: { west: 0.3, mountain: 0.24, south: -0.1 } },
     { name: 'Chick-fil-A', pop: 0.96, lean: { south: 0.3 } },
-    { name: 'Olive Garden', pop: 0.95, lean: { midwest: 0.16, northeast: -0.08 } },
+    { name: 'Whataburger', pop: 0.98, lean: { south: 0.3, northeast: -0.25, west: -0.1 } },
     { name: "Trader Joe's", pop: 0.94, lean: { west: 0.22, northeast: 0.15 } },
     { name: 'Waffle House', pop: 0.9, lean: { south: 0.36, west: -0.25 } },
-    { name: 'Tesla', pop: 0.95, lean: { west: 0.25, south: -0.1 } },
+    { name: 'YETI', pop: 0.99, lean: { south: 0.2, mountain: 0.2, northeast: -0.15 } },
     { name: 'In-N-Out Burger', pop: 0.92, lean: { west: 0.36, northeast: -0.25 } },
     { name: "Dunkin'", pop: 0.94, lean: { northeast: 0.36, west: -0.22 } },
     { name: 'Bass Pro Shops', pop: 0.88, lean: { south: 0.25, midwest: 0.15, northeast: -0.15 } },
@@ -95,7 +95,7 @@ const CATALOG: Partial<Record<Kind, Item[]>> = {
     { name: 'Gordon Ramsay', pop: 0.95 },
     { name: 'Matthew McConaughey', pop: 0.94, lean: { south: 0.3 } },
     { name: 'Martha Stewart', pop: 0.92, lean: { old: 0.22, northeast: 0.1 } },
-    { name: 'Kevin Costner', pop: 0.93, lean: { south: 0.22, mountain: 0.2, old: 0.15, northeast: -0.1 } },
+    { name: 'Matthew McConaughey', pop: 0.98, lean: { south: 0.25, mountain: 0.1, northeast: -0.12 } },
     { name: 'Mark Cuban', pop: 0.9, lean: { south: 0.12 } },
     { name: 'Sam Elliott', pop: 0.86, lean: { south: 0.25, mountain: 0.2, old: 0.2 } },
     { name: 'Timothée Chalamet', pop: 0.9, lean: { northeast: 0.2, west: 0.15, young: 0.2, south: -0.15 } },
@@ -145,13 +145,17 @@ function toEntity(item: Item, kind: Kind): QlooEntity {
   return { id: `sample:${kind}:${slug(item.name)}`, name: item.name, kind, popularity: item.pop, image: null, description: null }
 }
 
+// Sample strengths live on our 0..1 strength scale; Qloo reports affinity, so convert back (strength = -log10(1 - a) / 5).
+const toAffinity = (strength: number) => Math.round((1 - Math.pow(10, -5 * strength)) * 1e6) / 1e6
+// Like Qloo, leave out entities a crowd shows no measurable audience for.
+const MEASURABLE = 0.3
+
 function score(id: string, crowd: Crowd) {
   const found = itemById(id)
   const lean = found?.item.lean ?? {}
-  const national = crowd.city === 'United States'
   const region = REGION_OF[key(crowd.city)]
-  let a = 0.6 + (hash(id + '|' + key(crowd.city)) - 0.5) * (national ? 0.1 : 0.34)
-  if (!national && region) a += lean[region] ?? 0
+  let a = 0.55 + (hash(id + '|' + key(crowd.city)) - 0.5) * 0.3
+  if (region) a += lean[region] ?? 0
   if (crowd.age && ['24_and_younger', '25_to_29'].includes(crowd.age)) a += lean.young ?? 0
   if (crowd.age && ['45_to_54', '55_and_older'].includes(crowd.age)) a += lean.old ?? 0
   return Math.round(clamp(a) * 1000) / 1000
@@ -188,14 +192,19 @@ export function affinity(kind: Kind, ids: string[], crowd: Crowd, receipts: Rece
     },
     ids.length,
   )
-  return new Map(ids.map((id) => [id, score(id, crowd)]))
+  return new Map(
+    ids.map((id) => {
+      const x = score(id, crowd)
+      return [id, x < MEASURABLE ? null : toAffinity(x)] as [string, number | null]
+    }),
+  )
 }
 
 export function similar(kind: Kind, id: string, crowd: Crowd, receipts: Receipt[], take: number) {
   const out = (CATALOG[kind] ?? [])
     .map((i) => toEntity(i, kind))
     .filter((e) => e.id !== id && (e.popularity ?? 0) >= 0.75)
-    .map((entity) => ({ entity, affinity: score(entity.id, crowd) as number | null }))
+    .map((entity) => ({ entity, affinity: toAffinity(score(entity.id, crowd)) as number | null }))
     .sort((a, b) => (b.affinity ?? 0) - (a.affinity ?? 0))
     .slice(0, take)
   receipt(
@@ -221,11 +230,11 @@ export function favorites(kind: Kind, crowd: Crowd, receipts: Receipt[], take: n
   if (kind === 'place') {
     out = (PLACES[key(crowd.city)] ?? []).slice(0, take).map((name, i) => ({
       entity: { id: `sample:place:${slug(name)}`, name, kind, popularity: 0.9 - i * 0.04, image: null, description: null },
-      affinity: Math.round((0.97 - i * 0.05) * 1000) / 1000,
+      affinity: toAffinity(0.75 - i * 0.05),
     }))
   } else {
     out = (CATALOG[kind] ?? [])
-      .map((i) => ({ entity: toEntity(i, kind), affinity: score(toEntity(i, kind).id, crowd) as number | null }))
+      .map((i) => ({ entity: toEntity(i, kind), affinity: toAffinity(score(toEntity(i, kind).id, crowd)) as number | null }))
       .sort((a, b) => (b.affinity ?? 0) - (a.affinity ?? 0))
       .slice(0, take)
   }
@@ -242,7 +251,7 @@ export function favorites(kind: Kind, crowd: Crowd, receipts: Receipt[], take: n
 }
 
 const TAGS: Record<string, Item[]> = {
-  'urn:tag:genre:media': [
+  'urn:tag:theme:qloo': [
     { name: 'Dark Comedy', pop: 0.8, lean: { northeast: 0.25, west: 0.15, young: 0.1 } },
     { name: 'Satire', pop: 0.8, lean: { northeast: 0.22, west: 0.18 } },
     { name: 'Western', pop: 0.8, lean: { south: 0.3, mountain: 0.3, northeast: -0.2 } },
@@ -275,7 +284,7 @@ export function tags(tagType: string, crowd: Crowd, receipts: Receipt[], take: n
       let a = 0.55 + (hash(id + key(crowd.city)) - 0.5) * 0.2 + (region ? (t.lean?.[region] ?? 0) : 0)
       if (crowd.age && ['24_and_younger', '25_to_29'].includes(crowd.age)) a += t.lean?.young ?? 0
       if (crowd.age && ['45_to_54', '55_and_older'].includes(crowd.age)) a += t.lean?.old ?? 0
-      return { id, name: t.name, affinity: Math.round(clamp(a) * 1000) / 1000 as number | null }
+      return { id, name: t.name, affinity: toAffinity(clamp(a)) as number | null }
     })
     .sort((a, b) => (b.affinity ?? 0) - (a.affinity ?? 0))
     .slice(0, take)

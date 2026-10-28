@@ -39,7 +39,15 @@ function argLine(json: string) {
 /** Tiny renderer for the model's answers: bullets and **bold** only. */
 function Rich({ text }: { text: string }) {
   const inline = (s: string) =>
-    s.split(/(\*\*[^*]+\*\*)/g).map((p, i) => (p.startsWith('**') && p.endsWith('**') ? <b key={i} className="text-stage-100">{p.slice(2, -2)}</b> : p))
+    s.split(/(\*\*[^*]+\*\*|\*[^*\s][^*]*\*)/g).map((p, i) =>
+      p.startsWith('**') && p.endsWith('**') ? (
+        <b key={i} className="text-stage-100">{p.slice(2, -2)}</b>
+      ) : p.length > 2 && p.startsWith('*') && p.endsWith('*') ? (
+        <i key={i}>{p.slice(1, -1)}</i>
+      ) : (
+        p
+      ),
+    )
   const blocks: ReactNode[] = []
   let bullets: string[] = []
   const flush = () => {

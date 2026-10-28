@@ -31,7 +31,7 @@ export const labCityFn = createServerFn({ method: 'POST' })
       const refs = preset.refs.map(([, , name, kind], i) => ({ id: `${preset.id}-${i}`, name, kind }))
       const entities = await Promise.all(refs.map((r) => searchEntity(r.name, r.kind, receipts).then((e) => e[0] ?? null).catch(() => null)))
       const [scores, guesses] = await Promise.all([
-        scoreRefs(refs.map((r, i) => ({ id: r.id, kind: r.kind, entity: entities[i] })), crowd, null, receipts),
+        scoreRefs(refs.map((r, i) => ({ id: r.id, kind: r.kind, entity: entities[i] })), crowd, receipts),
         guessVerdicts(crowd, refs),
       ])
       for (const r of refs) {

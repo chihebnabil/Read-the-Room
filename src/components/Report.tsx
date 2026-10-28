@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { CITIES, TOUR_DEFAULT } from '~/lib/presets'
-import { roomScore, verdictFor } from '~/lib/scoring'
+import { roomScore } from '~/lib/scoring'
 import { AGE_LABEL, KIND_LABEL, VERDICT_META, type Kind, type ResolvedReference, type Swap, type Verdict } from '~/lib/types'
 import type { ReadingState } from '~/lib/useReading'
 import { RoadManager } from './RoadManager'
@@ -9,9 +9,7 @@ import { Bar, Gauge, KindTag, Spinner, VerdictBadge, pct, signed } from './ui'
 type Tab = 'set' | 'rewrite' | 'crowd' | 'tour' | 'manager' | 'receipts'
 
 function swapVerdict(s: Swap | undefined): Verdict | null {
-  if (!s?.chosen) return null
-  const c = s.chosen
-  return verdictFor(c.local, c.local !== null && c.lift !== null ? c.local - c.lift : null, c.entity.popularity).verdict
+  return s?.chosen?.verdict ?? null
 }
 
 export function Report({ state, onTour }: { state: ReadingState; onTour: (cities: string[]) => void }) {
@@ -246,7 +244,7 @@ function RefDetail({ state, refItem: r, rejected, onToggle }: { state: ReadingSt
       {s && s.verdict !== 'unknown' && (
         <div className="space-y-3">
           <Bar label={`This crowd (${state.crowd.city})`} value={s.local} tone="bulb" />
-          <Bar label="Nationwide" value={s.baseline} tone="muted" />
+          <Bar label={`Typical city (median of ${s.of} others)`} value={s.baseline} tone="muted" />
           <p className="text-sm text-stage-300">
             {s.lift !== null && (
               <span className={`mr-1 font-mono font-bold ${s.lift >= 0 ? 'text-kills' : 'text-dies'}`}>{signed(s.lift)}</span>
@@ -434,7 +432,7 @@ function CrowdView({ state }: { state: ReadingState }) {
                       }`}
                     >
                       {t.name}
-                      <span className="font-mono text-[10px] opacity-70">{t.affinity === null ? '' : t.affinity.toFixed(2)}</span>
+                      <span className="font-mono text-[10px] opacity-70">{t.affinity === null ? '' : pct(t.affinity)}</span>
                     </span>
                   ))}
                 </div>
@@ -460,7 +458,7 @@ function CrowdView({ state }: { state: ReadingState }) {
               {list.map((f) => (
                 <li key={f.entity.id} className="flex items-center justify-between gap-3 text-sm">
                   <span className="truncate text-stage-200">{f.entity.name}</span>
-                  <span className="shrink-0 font-mono text-xs text-stage-400">{pct(f.local)}</span>
+                  {f.local !== null && <span className="shrink-0 font-mono text-xs text-stage-400">{pct(f.local)}</span>}
                 </li>
               ))}
             </ul>
@@ -542,7 +540,7 @@ function TourView({ state, onTour }: { state: ReadingState; onTour: (cities: str
                   {t.cities.map((c) => {
                     const cell = cellFor(r.id, c)
                     return (
-                      <td key={c} className={`rounded-lg px-2 py-1.5 text-center font-mono text-xs ref-${cell?.verdict ?? 'unknown'}`} title={cell ? `${pct(cell.local)}/100, ${signed(cell.lift)} vs nationwide` : ''}>
+                      <td key={c} className={`rounded-lg px-2 py-1.5 text-center font-mono text-xs ref-${cell?.verdict ?? 'unknown'}`} title={cell ? `${pct(cell.local)}/100, ${signed(cell.lift)} vs. the typical city` : ''}>
                         {cell ? `${VERDICT_META[cell.verdict].emoji} ${pct(cell.local)}` : '–'}
                       </td>
                     )

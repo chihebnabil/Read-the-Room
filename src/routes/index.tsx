@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
+import { Link, createFileRoute } from '@tanstack/react-router'
 import { Report } from '~/components/Report'
 import { Trace } from '~/components/Trace'
 import { Spinner } from '~/components/ui'
@@ -228,19 +228,25 @@ function WhyQloo() {
           </p>
         </div>
         <div className="panel space-y-3 p-6 font-mono text-sm">
-          <div className="flex items-center justify-between rounded-2xl bg-stage-950 p-4">
+          <div className="flex items-center justify-between gap-4 rounded-2xl bg-stage-950 p-4">
             <span className="text-stage-300">AI alone</span>
-            <span className="text-stage-200">“Yellowstone is huge, it will land” 🔥</span>
+            <span className="text-right text-stage-200">“McConaughey is universally loved” 🔥</span>
           </div>
-          <div className="flex items-center justify-between rounded-2xl bg-stage-950 p-4 ring-1 ring-bulb/40">
+          <div className="flex items-center justify-between gap-4 rounded-2xl bg-stage-950 p-4 ring-1 ring-bulb/40">
             <span className="text-bulb">Qloo, Brooklyn</span>
-            <span className="text-stage-200">well below nationwide 💀</span>
+            <span className="text-right text-stage-200">under-indexes vs. 7 other cities 💀</span>
           </div>
-          <div className="flex items-center justify-between rounded-2xl bg-stage-950 p-4">
-            <span className="text-kills">Swap</span>
-            <span className="text-stage-200">a show Brooklyn over-indexes on 🔥</span>
+          <div className="flex items-center justify-between gap-4 rounded-2xl bg-stage-950 p-4">
+            <span className="text-bulb">Qloo, Austin</span>
+            <span className="text-right text-stage-200">over-indexes, strongly 🔥</span>
           </div>
-          <p className="pt-1 text-center font-sans text-xs text-stage-500">Illustration. Run the demo to see the real numbers and receipts.</p>
+          <Link to="/lab" className="block rounded-2xl border border-stage-700 p-4 text-center font-sans hover:border-bulb/50">
+            <span className="display text-4xl text-bulb">51%</span>
+            <span className="mt-1 block text-xs text-stage-300">
+              of 130 calls across 8 cities, a model with no data disagreed with Qloo. It called 🔥 twice as often as the data supports.
+            </span>
+            <span className="mt-1 block text-xs font-semibold text-bulb">See the benchmark →</span>
+          </Link>
         </div>
       </div>
     </section>

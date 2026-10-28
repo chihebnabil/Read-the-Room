@@ -6,8 +6,6 @@ const BASE = process.env.QLOO_BASE_URL || 'https://hackathon.api.qloo.com'
 
 export const qlooIsLive = () => Boolean(process.env.QLOO_API_KEY)
 
-export const NATIONAL = 'United States'
-
 type Json = Record<string, any>
 type Params = Record<string, string | number | undefined>
 
@@ -24,19 +22,27 @@ export class QlooError extends Error {
 const cache = new Map<string, { at: number; body: Json }>()
 const TTL = 6 * 60 * 60 * 1000
 
-// Bounded concurrency so one read never floods the API.
-let active = 0
-const waiting: (() => void)[] = []
-async function slot<T>(fn: () => Promise<T>): Promise<T> {
-  if (active >= 6) await new Promise<void>((r) => waiting.push(r))
-  active++
-  try {
-    return await fn()
-  } finally {
-    active--
-    waiting.shift()?.()
-  }
+// The hackathon key allows 10 requests per second. Stay under it: a rate-limited call must never read as
+// "no audience here", so we pace requests instead of relying on retries.
+const PER_SECOND = 8
+const sent: number[] = []
+let queue = Promise.resolve()
+function pace(): Promise<void> {
+  const turn = queue.then(async () => {
+    for (;;) {
+      const now = Date.now()
+      while (sent.length && now - sent[0] >= 1000) sent.shift()
+      if (sent.length < PER_SECOND) break
+      await new Promise((r) => setTimeout(r, 1000 - (now - sent[0]) + 5))
+    }
+    sent.push(Date.now())
+  })
+  queue = turn
+  return turn
 }
+
+// Identical requests made at the same time (for example two cities sharing the comparison panel) share one call.
+const inflight = new Map<string, Promise<Json>>()
 
 function clean(params: Params) {
   const out: Record<string, string> = {}
@@ -57,31 +63,40 @@ async function get(label: string, path: string, params: Params, receipts: Receip
     return hit.body
   }
 
-  const body = await slot(async () => {
-    for (let attempt = 1; ; attempt++) {
-      let res: Response | undefined
-      try {
-        res = await fetch(url, {
-          headers: { 'X-Api-Key': process.env.QLOO_API_KEY!, accept: 'application/json' },
-          signal: AbortSignal.timeout(25_000),
-        })
-      } catch (e) {
-        if (attempt >= 3) throw new QlooError(`Qloo ${path} unreachable: ${(e as Error).message}`, 0)
-      }
-      if (res?.ok) return (await res.json()) as Json
-      // Only retry what can succeed on retry: rate limits and server errors.
-      if (res && res.status !== 429 && res.status < 500) {
-        const text = await res.text().catch(() => '')
-        throw new QlooError(`Qloo ${path} returned ${res.status}: ${text.slice(0, 200)}`, res.status)
-      }
-      if (attempt >= 3) throw new QlooError(`Qloo ${path} returned ${res?.status ?? 'no response'}`, res?.status ?? 0)
-      await new Promise((r) => setTimeout(r, 800 * attempt))
-    }
-  })
-
-  cache.set(key, { at: Date.now(), body })
-  receipts.push({ label, endpoint: path, params: p, ms: Date.now() - started, source: 'live', resultCount: count(body) })
+  let pending = inflight.get(key)
+  const shared = Boolean(pending)
+  if (!pending) {
+    pending = fetchWithRetry(url, path).finally(() => inflight.delete(key))
+    inflight.set(key, pending)
+  }
+  const body = await pending
+  if (!shared) cache.set(key, { at: Date.now(), body })
+  receipts.push({ label, endpoint: path, params: p, ms: Date.now() - started, source: shared ? 'cache' : 'live', resultCount: count(body) })
   return body
+}
+
+async function fetchWithRetry(url: URL, path: string): Promise<Json> {
+  for (let attempt = 1; ; attempt++) {
+    await pace()
+    let res: Response | undefined
+    try {
+      res = await fetch(url, {
+        headers: { 'X-Api-Key': process.env.QLOO_API_KEY!, accept: 'application/json' },
+        signal: AbortSignal.timeout(25_000),
+      })
+    } catch (e) {
+      if (attempt >= 4) throw new QlooError(`Qloo ${path} unreachable: ${(e as Error).message}`, 0)
+    }
+    if (res?.ok) return (await res.json()) as Json
+    // Only retry what can succeed on retry: rate limits and server errors.
+    if (res && res.status !== 429 && res.status < 500) {
+      const text = await res.text().catch(() => '')
+      throw new QlooError(`Qloo ${path} returned ${res.status}: ${text.slice(0, 200)}`, res.status)
+    }
+    if (attempt >= 4) throw new QlooError(`Qloo ${path} returned ${res?.status ?? 'no response'}`, res?.status ?? 0)
+    const reset = Number(res?.headers.get('x-second-ratelimit-reset'))
+    await new Promise((r) => setTimeout(r, res?.status === 429 && reset > 0 ? reset * 1000 + 50 : 600 * attempt))
+  }
 }
 
 function count(body: Json) {
@@ -114,7 +129,8 @@ function toEntity(e: Json, kind: Kind): QlooEntity {
   }
 }
 
-const urn = (kind: Kind) => `urn:entity:${kind}`
+// Qloo spells the video game type without the underscore.
+const urn = (kind: Kind) => `urn:entity:${kind === 'video_game' ? 'videogame' : kind}`
 
 /** The crowd we are reading: a locality (and optionally an age band) as Qloo signals. */
 export interface Crowd {
@@ -212,22 +228,31 @@ export async function favoritesOf(
 }
 
 /** Taste analysis: the descriptive tags (genres, styles) a crowd over-indexes on. */
-export async function crowdTags(tagType: string, crowd: Crowd, receipts: Receipt[], take = 10): Promise<TasteTag[]> {
+export async function crowdTags(tagType: string, parents: Kind, crowd: Crowd, receipts: Receipt[], take = 10): Promise<TasteTag[]> {
   if (!qlooIsLive()) return sample.tags(tagType, crowd, receipts, take)
   const body = await get(
     `Taste profile of ${crowd.city}: ${tagType.split(':').slice(-2).join(' ')}`,
     '/v2/insights',
-    { 'filter.type': 'urn:tag', 'filter.tag.types': tagType, ...crowdSignals(crowd), take },
+    { 'filter.type': 'urn:tag', 'filter.tag.types': tagType, 'filter.parents.types': urn(parents), ...crowdSignals(crowd), take: take + 4 },
     receipts,
   )
   const tags: Json[] = Array.isArray(body?.results?.tags) ? body.results.tags : entityList(body)
   const seen = new Set<string>()
   return tags
-    .map((t) => ({ id: String(t.tag_id ?? t.id ?? t.name), name: String(t.name ?? '').replace(/\s+/g, ' ').trim(), affinity: num(t.query?.affinity) }))
+    .map((t) => ({ id: String(t.tag_id ?? t.id ?? t.name), name: tidyTag(String(t.name ?? '')), affinity: num(t.query?.affinity) }))
     .filter((t) => {
       const k = t.name.toLowerCase()
-      if (!t.name || seen.has(k) || k === crowd.city.toLowerCase()) return false
+      // Music tags include place names ("nashville", "new york") and filler ("cool"); they say nothing about taste.
+      if (!t.name || seen.has(k) || k === crowd.city.toLowerCase() || PLACE_TAGS.has(k) || k === 'cool') return false
       seen.add(k)
       return true
     })
+    .slice(0, take)
+}
+
+const PLACE_TAGS = new Set(['new york', 'nashville', 'chicago', 'los angeles', 'atlanta', 'boston', 'austin', 'texas', 'brooklyn', 'salt lake city', 'utah', 'south africa'])
+
+function tidyTag(name: string) {
+  const s = name.replace(/\s*-\s*/g, '-').replace(/\s+/g, ' ').trim()
+  return s.charAt(0).toUpperCase() + s.slice(1)
 }

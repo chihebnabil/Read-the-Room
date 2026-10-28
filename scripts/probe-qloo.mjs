@@ -28,15 +28,15 @@ const list = (b) => (Array.isArray(b?.results) ? b.results : b?.results?.entitie
 const refs = [
   ['Yellowstone', 'tv_show'],
   ['Succession', 'tv_show'],
-  ["Buc-ee's", 'brand'],
+  ['H-E-B', 'brand'],
   ['Whole Foods Market', 'brand'],
   ['Nickelback', 'artist'],
   ['Morgan Wallen', 'artist'],
-  ['Kevin Costner', 'person'],
+  ['Matthew McConaughey', 'person'],
   ['The Joe Rogan Experience', 'podcast'],
-  ['Fortnite', 'video_game'],
+  ['Fortnite', 'videogame'],
 ]
-const cities = ['Nashville', 'Brooklyn', 'Salt Lake City', 'Los Angeles', 'United States']
+const cities = ['Nashville', 'Brooklyn', 'Austin', 'Salt Lake City', 'Los Angeles']
 
 const ids = {}
 for (const [name, kind] of refs) {

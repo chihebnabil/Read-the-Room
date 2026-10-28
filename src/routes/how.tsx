@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Link, createFileRoute } from '@tanstack/react-router'
+import { CITIES } from '~/lib/presets'
 import { THRESHOLDS } from '~/lib/scoring'
 
 export const Route = createFileRoute('/how')({ component: How })
 
 const calls = [
   ['Find the reference', 'GET /search', 'query=Whole Foods Market · types=urn:entity:brand', 'Resolves the name in the script to one Qloo entity. Exact names win over fuzzy top hits.'],
-  ['Score it for tonight', 'GET /v2/insights', 'filter.type=urn:entity:brand · filter.results.entities=<ids> · signal.location.query=Nashville · signal.demographics.age=…', 'Affinity of each reference with this crowd.'],
-  ['Compare with the country', 'GET /v2/insights', 'same, with signal.location.query=United States', 'The baseline. The gap between the two is what makes a reference local.'],
-  ['Find a swap', 'GET /v2/insights', 'signal.interests.entities=<weak ref> · signal.location.query=Nashville · filter.popularity.min=0.75', 'Things like the weak reference that this crowd loves, limited to well-known ones so the room still gets it.'],
+  ['Score it for tonight', 'GET /v2/insights', 'filter.type=urn:entity:brand · filter.results.entities=<ids> · signal.location.query=Nashville · signal.demographics.age=…', 'Affinity of each reference with this crowd. If Qloo leaves a reference out, it measured no audience for it here.'],
+  ['Compare with other cities', 'GET /v2/insights', `same, once per comparison city: ${CITIES.join(', ')}`, 'The baseline is the same reference in the typical city. The gap between the two is what makes a reference local.'],
+  ['Find a swap', 'GET /v2/insights', 'signal.interests.entities=<weak ref> · signal.location.query=Nashville · filter.popularity.min=0.75', 'Things like the weak reference, limited to well-known ones so the room still gets it. Each candidate is then scored exactly like the original.'],
   ['Crowd work', 'GET /v2/insights', 'filter.type=urn:entity:place · filter.location.query=Nashville (and TV, music, brands, movies by signal.location)', 'What this city over-indexes on, for openers.'],
 ]
 
@@ -40,11 +41,16 @@ function How() {
       </ol>
 
       <h2 className="display mt-14 text-3xl text-stage-100">How a verdict is decided</h2>
-      <p className="mt-3 text-stage-300">The model never decides the verdict. A fixed rule does, using only Qloo numbers:</p>
+      <p className="mt-3 text-stage-300">
+        The model never decides the verdict. A fixed rule does, using only Qloo numbers. Qloo affinities for well-known names all sit between 0.9
+        and 0.99999, so we read them on a log scale: strength = −log₁₀(1 − affinity) ÷ 5, which puts 0.99 at 40/100 and 0.999 at 60/100. Then each
+        reference is compared with itself in the other cities, never with other references.
+      </p>
       <ul className="mt-4 space-y-2 text-sm text-stage-300">
-        <li>🔥 <b>Kills</b>: local affinity at least {THRESHOLDS.killsLocal * 100}/100, or at least {THRESHOLDS.killsLift * 100} points above nationwide.</li>
-        <li>💀 <b>Dies</b>: local affinity under {THRESHOLDS.diesLocal * 100}/100, at least {Math.abs(THRESHOLDS.diesLift * 100)} points below nationwide, or too obscure (popularity under {THRESHOLDS.obscure * 100}th percentile).</li>
-        <li>😬 <b>Risky</b>: everything in between.</li>
+        <li>🔥 <b>Kills</b>: at least {THRESHOLDS.killsStrength * 100}/100 here, and either {THRESHOLDS.killsLift * 100}+ points above its median in the other cities or a regional favorite (measured in at most a third of them).</li>
+        <li>💀 <b>Dies</b>: at least {Math.abs(THRESHOLDS.diesLift * 100)} points below its median, or no measurable audience here while other cities have one.</li>
+        <li>😬 <b>Risky</b>: about as strong here as anywhere, or a household name (popularity in the top {Math.round((1 - THRESHOLDS.household) * 1000) / 10}%) this crowd does not over-index on: recognized, not loved.</li>
+        <li>❔ <b>No data</b>: Qloo has no location data for it in any of the cities.</li>
       </ul>
 
       <h2 className="display mt-14 text-3xl text-stage-100">Use it from your own agent</h2>
