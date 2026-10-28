@@ -34,7 +34,7 @@ function Lab() {
   const comparable = rows.filter((r) => r.guess && r.qloo !== 'unknown')
   const disagree = comparable.filter((r) => r.guess !== r.qloo)
   const costly = comparable.filter((r) => r.guess === 'kills' && r.qloo === 'dies')
-  const missed = comparable.filter((r) => r.guess === 'dies' && r.qloo === 'kills')
+  const kept = comparable.filter((r) => r.qloo === 'dies' && r.guess !== 'dies')
   const guessSpread = (['kills', 'risky', 'dies'] as const).map((v) => [v, comparable.filter((r) => r.guess === v).length] as const)
   const qlooSpread = (['kills', 'risky', 'dies'] as const).map((v) => [v, comparable.filter((r) => r.qloo === v).length] as const)
 
@@ -69,7 +69,7 @@ function Lab() {
           <div className="mt-10 grid gap-4 md:grid-cols-4">
             <Stat value={`${Math.round((disagree.length / comparable.length) * 100)}%`} label={`of ${comparable.length} calls differ from Qloo`} />
             <Stat value={String(costly.length)} label="times the AI said “kills” where Qloo says “dies”" />
-            <Stat value={String(missed.length)} label="local wins the AI would have cut" />
+            <Stat value={`${kept.length} of ${comparable.filter((r) => r.qloo === 'dies').length}`} label="bits that die here that the AI would have kept" />
             <div className="panel p-5 text-sm">
               <p className="eyebrow">Verdict spread</p>
               <p className="mt-2 text-stage-300">AI: {guessSpread.map(([v, n]) => `${VERDICT_META[v].emoji}${n}`).join(' ')}</p>

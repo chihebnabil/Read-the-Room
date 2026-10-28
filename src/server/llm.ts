@@ -80,6 +80,8 @@ export async function structuredChat<T extends z.ZodType>(opts: {
   messages: ChatMessage[]
   maxTokens?: number
   timeoutMs?: number
+  /** Short, well-specified tasks run without reasoning; it adds seconds without better output. */
+  reasoning?: 'off' | 'low'
 }): Promise<z.infer<T>> {
   const body = await post({
     messages: opts.messages,
@@ -90,8 +92,7 @@ export async function structuredChat<T extends z.ZodType>(opts: {
     },
     // Only route to providers that honor the JSON schema.
     provider: { require_parameters: true },
-    // These are short, well-specified tasks: thinking adds seconds without better output.
-    reasoning: { enabled: false },
+    reasoning: opts.reasoning === 'low' ? { effort: 'low' } : { enabled: false },
   }, opts.timeoutMs)
   const choice = body.choices?.[0]
   if (choice?.message?.refusal) throw new AIError('The model declined this request.')

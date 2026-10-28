@@ -153,7 +153,7 @@ export function useReading() {
               }).catch(() => null)
               if (rw) patch(() => ({ swaps: Object.fromEntries(rw.swaps.map((x) => [x.refId, x])), swapBy: rw.by }))
               else patch(() => ({ swapBy: 'simple' }))
-              step('swap', 'done', `${found.length} lines rewritten`)
+              step('swap', 'done', `${(rw?.swaps ?? sw.swaps).filter((x) => x.chosen).length} lines rewritten`)
             } catch (e) {
               step('swap', 'error', (e as Error).message)
             }

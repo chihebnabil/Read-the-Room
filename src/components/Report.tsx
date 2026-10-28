@@ -328,11 +328,17 @@ function RefDetail({ state, refItem: r, rejected, onToggle }: { state: ReadingSt
                 </ul>
               )}
               <div className="space-y-2 rounded-xl bg-stage-950 p-4 text-sm">
-                <p className="text-stage-500 line-through decoration-dies/60">{sw.original}</p>
-                <p className="text-stage-100">
-                  <Highlight text={sw.rewritten} word={sw.chosen?.entity.name ?? null} />
-                </p>
-                <p className="text-xs text-stage-400">{sw.note}</p>
+                {sw.chosen ? (
+                  <>
+                    <p className="text-stage-500 line-through decoration-dies/60">{sw.original}</p>
+                    <p className="text-stage-100">
+                      <Highlight text={sw.rewritten} word={sw.chosen.entity.name} />
+                    </p>
+                  </>
+                ) : (
+                  state.swapBy === null && sw.candidates.length > 0 && <Spinner />
+                )}
+                <p className={sw.chosen ? 'text-xs text-stage-400' : 'text-sm text-stage-300'}>{sw.note}</p>
               </div>
               {sw.chosen && (
                 <button onClick={onToggle} className="btn-line text-xs">
