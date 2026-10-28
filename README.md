@@ -15,7 +15,7 @@ Paste a set, speech or toast and pick a city (and optionally the room: college s
 
 It also asks a model with no data to guess the same verdicts, and shows where the guess and Qloo disagree. That is the point of the project: without Qloo, an AI can only guess in stereotypes.
 
-**The benchmark** (`/lab`): every reference in both sample scripts, in 8 cities. On live Qloo data, a model with no data disagreed with Qloo on **54% of 136 calls**, called 🔥 more than twice as often as the data supports (79 vs. 35), and said "kills" 11 times where Qloo measured "dies".
+**The benchmark** (`/lab`): every reference in both sample scripts, in 8 cities. On live Qloo data, a model with no data disagreed with Qloo on **54% of 136 calls**. Of the 35 bits Qloo says die, the model would have kept 23, and it called 🔥 about twice as often as the data supports. (The model's guesses vary slightly from run to run.)
 
 ### The Road Manager
 
