@@ -15,8 +15,8 @@ export function VerdictBadge({ verdict, size = 'sm' }: { verdict: Verdict; size?
   const m = VERDICT_META[verdict]
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border font-bold ${TONE[verdict]} ${
-        size === 'lg' ? 'px-4 py-1.5 text-base' : 'px-2.5 py-0.5 text-xs'
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border font-bold ${TONE[verdict]} ${
+        size === 'lg' ? 'px-3 py-1.5 text-sm' : 'px-2 py-0.5 text-xs'
       }`}
     >
       <span aria-hidden>{m.emoji}</span>

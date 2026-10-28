@@ -17,9 +17,9 @@ function How() {
   const [origin, setOrigin] = useState('https://<your-deployment>')
   useEffect(() => setOrigin(window.location.origin), [])
   return (
-    <div className="mx-auto max-w-4xl px-6 py-16">
+    <div className="mx-auto w-full max-w-4xl px-5 py-14 sm:px-8">
       <p className="eyebrow">How it works</p>
-      <h1 className="display mt-2 text-5xl text-stage-100">The agent, step by step</h1>
+      <h1 className="display mt-2 text-4xl text-stage-100 sm:text-5xl">The agent, step by step</h1>
       <p className="mt-4 text-lg leading-relaxed text-stage-300">
         A model alone can only guess what a city likes, and it guesses in stereotypes. Read the Room asks Qloo, which measures cultural
         affinity across 250M+ entities, and only uses the model for what models are good at: reading the script and rewriting a line so the
@@ -28,8 +28,8 @@ function How() {
 
       <ol className="mt-10 space-y-4">
         {calls.map(([title, endpoint, params, why], i) => (
-          <li key={title} className="panel p-5">
-            <div className="flex items-baseline gap-3">
+          <li key={title} className="panel p-4 sm:p-5">
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
               <span className="font-mono text-sm text-bulb">{String(i + 1).padStart(2, '0')}</span>
               <p className="text-lg font-bold text-stage-100">{title}</p>
               <span className="ml-auto font-mono text-xs text-kills">{endpoint}</span>

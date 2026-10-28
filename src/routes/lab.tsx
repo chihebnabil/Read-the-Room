@@ -39,9 +39,9 @@ function Lab() {
   const qlooSpread = (['kills', 'risky', 'dies'] as const).map((v) => [v, comparable.filter((r) => r.qloo === v).length] as const)
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-16">
-      <p className="eyebrow">Lab</p>
-      <h1 className="display mt-2 text-5xl text-stage-100">AI alone vs. Qloo</h1>
+    <div className="wrap py-14">
+      <p className="eyebrow">Benchmark</p>
+      <h1 className="display mt-2 text-4xl text-stage-100 sm:text-5xl">AI alone vs. Qloo</h1>
       <p className="mt-4 max-w-3xl text-stage-300">
         Every reference in both sample scripts, in {CITIES.length} cities. For each one we compare a model’s guess with no data against the
         verdict computed from Qloo’s numbers. Disagreement does not prove the model wrong, but it shows how often a model-only tool would give
@@ -58,6 +58,9 @@ function Lab() {
           'Run the benchmark'
         )}
       </button>
+      {!rows.length && !running && (
+        <p className="mt-2 text-xs text-stage-500">Takes about a minute: every reference is scored live in {CITIES.length} cities. Last run: 51% of 130 calls differed.</p>
+      )}
       {mode === 'sample' && <p className="mt-2 text-sm text-risky">Qloo is in sample mode on this server, so these numbers are not meaningful.</p>}
       {error && <p className="mt-2 text-sm text-dies">{error}</p>}
 

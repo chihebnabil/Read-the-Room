@@ -8,6 +8,12 @@ import { Bar, Gauge, KindTag, Spinner, VerdictBadge, pct, signed } from './ui'
 
 type Tab = 'set' | 'rewrite' | 'crowd' | 'tour' | 'manager' | 'receipts'
 
+const VERDICT_CHIP: Record<'kills' | 'risky' | 'dies', string> = {
+  kills: 'border-kills/30 bg-kills/10 text-kills',
+  risky: 'border-risky/30 bg-risky/10 text-risky',
+  dies: 'border-dies/30 bg-dies/10 text-dies',
+}
+
 function swapVerdict(s: Swap | undefined): Verdict | null {
   return s?.chosen?.verdict ?? null
 }
@@ -49,54 +55,65 @@ export function Report({ state, onTour }: { state: ReadingState; onTour: (cities
   return (
     <div className="space-y-5">
       <div className="panel overflow-hidden">
-        <div className="grid gap-6 p-6 md:grid-cols-[1fr_auto] md:items-center">
-          <div>
-            <p className="eyebrow">Tonight’s room</p>
-            <h2 className="display mt-1 text-4xl text-stage-100">{state.crowd.city}</h2>
+        <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-5 p-5 sm:p-6">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="eyebrow">Tonight’s room</p>
+              {state.mode === 'sample' && <span className="rounded-md bg-bulb/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-bulb">Sample data, not Qloo</span>}
+              {state.mode === 'live' && <span className="rounded-md bg-kills/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-kills">Live Qloo data</span>}
+            </div>
+            <h2 className="display mt-1.5 truncate text-4xl text-stage-100 sm:text-5xl">{state.crowd.city}</h2>
             <p className="mt-1 text-sm text-stage-400">
               {state.crowd.venue}
-              {state.crowd.age ? ` · crowd mostly ${AGE_LABEL[state.crowd.age]}` : ''}
-              {state.mode === 'sample' && <span className="ml-2 rounded-full bg-bulb/15 px-2 py-0.5 text-[11px] font-bold text-bulb">Sample data, not Qloo</span>}
-              {state.mode === 'live' && <span className="ml-2 rounded-full bg-kills/15 px-2 py-0.5 text-[11px] font-bold text-kills">Live Qloo data</span>}
+              {state.crowd.age ? ` · crowd mostly ${AGE_LABEL[state.crowd.age]}` : ' · mixed ages'}
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
               {counts.map(([v, n]) => (
-                <span key={v} className="inline-flex items-center gap-1.5 rounded-full bg-stage-800 px-3 py-1 text-xs font-semibold text-stage-200">
+                <span key={v} className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold ${VERDICT_CHIP[v]}`}>
                   {VERDICT_META[v].emoji} {n} {VERDICT_META[v].label.toLowerCase()}
                 </span>
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-3">
             <Gauge value={before} label="As written" dim={hasSwaps} />
             {hasSwaps && (
               <>
-                <span className="display text-2xl text-stage-500">→</span>
+                <span className="text-xl text-stage-500" aria-hidden>
+                  →
+                </span>
                 <Gauge value={after} label="With swaps" />
               </>
             )}
           </div>
         </div>
         {state.guessAvailable && disagreements.length > 0 && (
-          <div className="border-t border-stage-800 bg-stage-850 px-6 py-4">
+          <div className="border-t border-stage-800 bg-stage-850 px-5 py-3.5 sm:px-6">
             <p className="text-sm text-stage-200">
               <span className="font-bold text-bulb">
-                An AI with no data disagreed with Qloo on {disagreements.length} of {Object.keys(state.guesses).length} references.
+                A model with no data disagreed with Qloo on {disagreements.length} of {Object.keys(state.guesses).length} references.
               </span>{' '}
-              Its guess → what Qloo measured:{' '}
-              {disagreements.slice(0, 3).map((r, i) => (
-                <button key={r.id} onClick={() => { setSelected(r.id); setTab('set') }} className="underline decoration-stage-500 underline-offset-2 hover:text-stage-100">
-                  {r.name} {VERDICT_META[state.guesses[r.id].verdict].emoji}→{VERDICT_META[state.scores[r.id].verdict].emoji}
-                  {i < Math.min(3, disagreements.length) - 1 ? ', ' : ''}
+              <span className="text-stage-400">Its guess → Qloo:</span>
+            </p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {disagreements.map((r) => (
+                <button
+                  key={r.id}
+                  onClick={() => {
+                    setSelected(r.id)
+                    setTab('set')
+                  }}
+                  className="rounded-lg border border-stage-700 bg-stage-900 px-2 py-1 text-xs text-stage-200 transition hover:border-stage-500"
+                >
+                  {r.name} <span className="whitespace-nowrap">{VERDICT_META[state.guesses[r.id].verdict].emoji} → {VERDICT_META[state.scores[r.id].verdict].emoji}</span>
                 </button>
               ))}
-              {disagreements.length > 3 ? ` and ${disagreements.length - 3} more.` : '.'}
-            </p>
+            </div>
           </div>
         )}
       </div>
 
-      <div className="flex flex-wrap gap-1 rounded-full border border-stage-800 bg-stage-900 p-1">
+      <div className="no-scrollbar -mx-5 flex gap-6 overflow-x-auto border-b border-stage-800 px-5 sm:mx-0 sm:px-1">
         {(
           [
             ['set', 'Your set'],
@@ -114,7 +131,7 @@ export function Report({ state, onTour }: { state: ReadingState; onTour: (cities
       </div>
 
       {tab === 'set' && (
-        <div className="grid gap-5 lg:grid-cols-[1.25fr_1fr]">
+        <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
           <SetView state={state} selected={selected} onSelect={setSelected} />
           {selected && state.refs.find((r) => r.id === selected) ? (
             <RefDetail
@@ -124,7 +141,7 @@ export function Report({ state, onTour }: { state: ReadingState; onTour: (cities
               onToggle={() => setChoice((c) => ({ ...c, [selected]: !active(selected) }))}
             />
           ) : (
-            <div className="panel flex items-center justify-center p-8 text-sm text-stage-500">Click a highlighted reference.</div>
+            <div className="panel flex items-center justify-center p-8 text-sm text-stage-500">Pick a highlighted reference.</div>
           )}
         </div>
       )}
@@ -157,24 +174,31 @@ function segments(line: string, refs: ResolvedReference[]) {
 
 function SetView({ state, selected, onSelect }: { state: ReadingState; selected: string | null; onSelect: (id: string) => void }) {
   return (
-    <div className="panel p-6">
-      <p className="eyebrow mb-4">The set, read for {state.crowd.city}</p>
+    <div className="panel p-5 sm:p-6">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <p className="eyebrow">The set, read for {state.crowd.city}</p>
+        <p className="text-xs text-stage-500">Tap a reference for the numbers</p>
+      </div>
       <ol className="space-y-3">
         {state.lines.map((line, i) => {
           const refs = state.refs.filter((r) => r.line === i)
           return (
             <li key={i} className="flex gap-3 text-[15px] leading-relaxed">
               <span className="w-5 shrink-0 pt-0.5 text-right font-mono text-xs text-stage-600">{i + 1}</span>
-              <p className="text-stage-200">
+              <p className="min-w-0 text-stage-200">
                 {segments(line, refs).map((seg, j) =>
                   typeof seg === 'string' ? (
                     <span key={j}>{seg}</span>
                   ) : (
                     <button
                       key={j}
-                      onClick={() => onSelect(seg.id)}
+                      onClick={() => {
+                        onSelect(seg.id)
+                        // On narrow screens the details sit under the set; bring them into view.
+                        if (window.innerWidth < 1024) setTimeout(() => document.getElementById('ref-detail')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+                      }}
                       className={`rounded px-1 font-semibold text-stage-100 transition ref-${state.scores[seg.id]?.verdict ?? 'pending'} ${
-                        selected === seg.id ? 'ring-2 ring-stage-100' : ''
+                        selected === seg.id ? 'outline-2 outline-offset-1 outline-stage-100' : 'hover:brightness-125'
                       }`}
                     >
                       {seg.surface}
@@ -211,29 +235,29 @@ function RefDetail({ state, refItem: r, rejected, onToggle }: { state: ReadingSt
   const weak = s && (s.verdict === 'dies' || s.verdict === 'risky')
   const receipts = state.receipts.filter((x) => r.entity && Object.values(x.params).some((v) => v.includes(r.entity!.id)))
   return (
-    <div className="panel animate-rise space-y-5 p-6" key={r.id}>
+    <div id="ref-detail" className="panel animate-rise scroll-mt-4 space-y-5 p-5 sm:p-6 lg:sticky lg:top-4" key={r.id}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <KindTag kind={r.kind} />
             <span className="text-xs text-stage-500">line {r.line + 1}</span>
           </div>
-          <h3 className="mt-1.5 text-xl font-bold text-stage-100">{r.name}</h3>
-          <p className="text-xs text-stage-400">Plays the role of: {r.role}</p>
+          <h3 className="mt-1.5 text-xl font-bold leading-tight text-stage-100">{r.name}</h3>
+          <p className="mt-0.5 text-xs text-stage-400">Plays the role of: {r.role}</p>
         </div>
-        {s ? <VerdictBadge verdict={s.verdict} size="lg" /> : <Spinner />}
+        <div className="shrink-0">{s ? <VerdictBadge verdict={s.verdict} size="lg" /> : <Spinner />}</div>
       </div>
 
       {r.entity ? (
-        <div className="flex items-center gap-3 rounded-2xl bg-stage-950 p-3">
+        <div className="flex items-start gap-3 rounded-xl bg-stage-950 p-3">
           {r.entity.image ? (
-            <img src={r.entity.image} alt="" className="h-12 w-12 rounded-xl object-cover" />
+            <img src={r.entity.image} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" />
           ) : (
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-stage-800 text-xs font-bold text-stage-500">{KIND_LABEL[r.kind]}</div>
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-stage-800 text-[10px] font-bold text-stage-500">{KIND_LABEL[r.kind]}</div>
           )}
-          <div className="min-w-0 text-xs">
+          <div className="min-w-0 flex-1 text-xs">
             <p className="font-semibold text-stage-200">Qloo match: {r.entity.name}</p>
-            <p className="truncate text-stage-500">{r.entity.description ?? r.entity.id}</p>
+            {r.entity.description && <p className="mt-0.5 line-clamp-2 text-stage-500" title={r.entity.description}>{r.entity.description}</p>}
             {r.entity.popularity !== null && <p className="text-stage-500">Popularity: {pct(r.entity.popularity)}th percentile</p>}
           </div>
         </div>
@@ -245,12 +269,7 @@ function RefDetail({ state, refItem: r, rejected, onToggle }: { state: ReadingSt
         <div className="space-y-3">
           <Bar label={`This crowd (${state.crowd.city})`} value={s.local} tone="bulb" />
           <Bar label={`Typical city (median of ${s.of} others)`} value={s.baseline} tone="muted" />
-          <p className="text-sm text-stage-300">
-            {s.lift !== null && (
-              <span className={`mr-1 font-mono font-bold ${s.lift >= 0 ? 'text-kills' : 'text-dies'}`}>{signed(s.lift)}</span>
-            )}
-            {s.why}
-          </p>
+          <p className="text-sm leading-relaxed text-stage-300">{s.why}</p>
         </div>
       )}
 
@@ -282,11 +301,11 @@ function RefDetail({ state, refItem: r, rejected, onToggle }: { state: ReadingSt
                   {sw.candidates.map((c) => (
                     <li
                       key={c.entity.id}
-                      className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm ${
+                      className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm ${
                         sw.chosen?.entity.id === c.entity.id ? 'bg-kills/10 text-stage-100 ring-1 ring-kills/40' : 'bg-stage-950 text-stage-300'
                       }`}
                     >
-                      <span className="truncate font-medium">
+                      <span className="min-w-0 truncate font-medium">
                         {sw.chosen?.entity.id === c.entity.id && '★ '}
                         {c.entity.name}
                       </span>
@@ -299,7 +318,7 @@ function RefDetail({ state, refItem: r, rejected, onToggle }: { state: ReadingSt
                   ))}
                 </ul>
               )}
-              <div className="space-y-2 rounded-2xl bg-stage-950 p-4 text-sm">
+              <div className="space-y-2 rounded-xl bg-stage-950 p-4 text-sm">
                 <p className="text-stage-500 line-through decoration-dies/60">{sw.original}</p>
                 <p className="text-stage-100">
                   <Highlight text={sw.rewritten} word={sw.chosen?.entity.name ?? null} />
@@ -332,8 +351,8 @@ function RefDetail({ state, refItem: r, rejected, onToggle }: { state: ReadingSt
 
 function ReceiptLine({ r }: { r: ReadingState['receipts'][number] }) {
   return (
-    <div className="rounded-xl bg-stage-950 p-2.5 font-mono text-[11px] leading-relaxed">
-      <p className="text-stage-300">
+    <div className="min-w-0 rounded-lg bg-stage-950 p-2.5 font-mono text-[11px] leading-relaxed">
+      <p className="break-all text-stage-300">
         <span className={r.source === 'live' ? 'text-kills' : r.source === 'cache' ? 'text-stage-200' : 'text-bulb'}>{r.source.toUpperCase()}</span> GET {r.endpoint}
         <span className="text-stage-500"> · {r.resultCount} results{r.ms ? ` · ${r.ms}ms` : ''}</span>
       </p>
@@ -368,8 +387,8 @@ function RewriteView({ state, rejected }: { state: ReadingState; rejected: Set<s
   )
   const changed = lines.filter((l) => l.changed).length
   return (
-    <div className="panel p-6">
-      <div className="mb-4 flex items-center justify-between gap-3">
+    <div className="panel p-5 sm:p-6">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="eyebrow">
           {changed} line{changed === 1 ? '' : 's'} punched up for {state.crowd.city}
           {state.swapBy === 'simple' ? ' (simple swaps, model unavailable)' : ''}
@@ -389,7 +408,7 @@ function RewriteView({ state, rejected }: { state: ReadingState; rejected: Set<s
         {lines.map((l, i) => (
           <li key={i} className="flex gap-3 text-[15px] leading-relaxed">
             <span className="w-5 shrink-0 pt-0.5 text-right font-mono text-xs text-stage-600">{i + 1}</span>
-            <div>
+            <div className="min-w-0">
               {l.changed && <p className="text-xs text-stage-500 line-through decoration-dies/50">{state.lines[i]}</p>}
               <p className={l.changed ? 'text-stage-100' : 'text-stage-300'}>
                 {l.words.length === 1 ? <Highlight text={l.text} word={l.words[0]} /> : l.text}
@@ -416,7 +435,7 @@ function CrowdView({ state }: { state: ReadingState }) {
   return (
     <div className="space-y-5">
       {profile.length > 0 && (
-        <div className="panel p-6">
+        <div className="panel p-5 sm:p-6">
           <p className="eyebrow">The room’s taste profile</p>
           {cw.styleTip && <p className="mt-2 text-lg font-semibold leading-snug text-stage-100">{cw.styleTip}</p>}
           <div className="mt-4 grid gap-5 md:grid-cols-2">
@@ -427,7 +446,7 @@ function CrowdView({ state }: { state: ReadingState }) {
                   {p.tags.map((t, i) => (
                     <span
                       key={t.id}
-                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${
+                      className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold ${
                         i < 3 ? 'border-bulb/50 bg-bulb/10 text-bulb' : 'border-stage-700 text-stage-300'
                       }`}
                     >
@@ -480,8 +499,9 @@ function TourView({ state, onTour }: { state: ReadingState; onTour: (cities: str
 
   return (
     <div className="space-y-5">
-      <div className="panel p-6">
+      <div className="panel p-5 sm:p-6">
         <p className="eyebrow">Take this set on tour</p>
+        <p className="mt-1 text-sm text-stage-400">Pick up to 8 cities. Every reference is scored in each one, with the same rules.</p>
         <div className="mt-3 flex flex-wrap gap-2">
           {[...new Set([...CITIES, ...cities])].map((c) => (
             <button
@@ -516,7 +536,7 @@ function TourView({ state, onTour }: { state: ReadingState; onTour: (cities: str
       </div>
 
       {t.status === 'done' && (
-        <div className="panel overflow-x-auto p-6">
+        <div className="panel overflow-x-auto p-5 sm:p-6">
           {best && best[1] !== null && (
             <p className="mb-4 text-sm text-stage-300">
               This set plays best in <span className="font-bold text-kills">{best[0]}</span> ({best[1]}/100).
@@ -565,15 +585,15 @@ function TourView({ state, onTour }: { state: ReadingState; onTour: (cities: str
 
 function ReceiptsView({ state }: { state: ReadingState }) {
   return (
-    <div className="panel p-6">
+    <div className="panel p-5 sm:p-6">
       <p className="eyebrow">Every Qloo request behind this read</p>
       <p className="mt-1 text-xs text-stage-500">
         Exact parameters, no key. Qloo results describe what groups tend to like, not what any one person will do.
       </p>
       <div className="mt-4 grid gap-2 md:grid-cols-2">
         {state.receipts.map((r, i) => (
-          <div key={i}>
-            <p className="mb-1 text-xs font-semibold text-stage-300">{r.label}</p>
+          <div key={i} className="min-w-0">
+            <p className="mb-1 truncate text-xs font-semibold text-stage-300">{r.label}</p>
             <ReceiptLine r={r} />
           </div>
         ))}

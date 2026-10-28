@@ -56,28 +56,35 @@ body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; min-h
 
 @layer components {
   .display { font-family: var(--font-display); letter-spacing: 0.01em; text-transform: uppercase; }
+  .wrap { @apply mx-auto w-full max-w-6xl px-5 sm:px-8; }
   .btn-bulb {
-    @apply inline-flex items-center justify-center gap-2 rounded-full bg-bulb px-6 py-3 text-sm font-bold text-stage-950 shadow-[0_0_30px_-6px_var(--color-bulb)] transition hover:bg-[#ffd27a] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-bulb px-5 py-3 text-sm font-bold text-stage-950 transition hover:bg-[#ffd27a] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-line {
-    @apply inline-flex items-center justify-center gap-2 rounded-full border border-stage-600 px-4 py-2 text-sm font-semibold text-stage-200 transition hover:border-stage-400 hover:text-stage-100 disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-stage-700 bg-stage-900 px-4 py-2 text-sm font-semibold text-stage-200 transition hover:border-stage-500 hover:text-stage-100 disabled:opacity-50;
   }
   .chip {
-    @apply inline-flex items-center gap-1.5 rounded-full border border-stage-700 bg-stage-900 px-3 py-1.5 text-xs font-semibold text-stage-300 transition hover:border-stage-500 hover:text-stage-100;
+    @apply inline-flex items-center gap-1.5 rounded-lg border border-stage-700 bg-stage-900 px-2.5 py-1.5 text-xs font-semibold text-stage-300 transition hover:border-stage-500 hover:text-stage-100;
   }
   .chip-on {
-    @apply border-bulb bg-bulb/10 text-bulb;
+    @apply border-bulb/70 bg-bulb/10 text-bulb;
   }
   .panel {
-    @apply rounded-3xl border border-stage-800 bg-stage-900/80 backdrop-blur;
+    @apply min-w-0 rounded-2xl border border-stage-800 bg-stage-900;
   }
   .input {
-    @apply w-full rounded-2xl border border-stage-700 bg-stage-950 px-4 py-3 text-sm text-stage-100 placeholder:text-stage-500 outline-none transition focus:border-bulb focus:ring-4 focus:ring-bulb/15;
+    @apply w-full rounded-xl border border-stage-700 bg-stage-950 px-3.5 py-2.5 text-sm text-stage-100 placeholder:text-stage-500 outline-none transition focus:border-bulb/70 focus:ring-4 focus:ring-bulb/10;
   }
-  .eyebrow { @apply text-[11px] font-bold uppercase tracking-[0.18em] text-stage-400; }
-  .tab { @apply rounded-full px-4 py-2 text-sm font-semibold text-stage-400 transition hover:text-stage-100; }
-  .tab-on { @apply bg-stage-100 text-stage-950 hover:text-stage-950; }
+  .eyebrow { @apply text-[11px] font-bold uppercase tracking-[0.16em] text-stage-400; }
+  .tab {
+    @apply relative shrink-0 whitespace-nowrap px-1 pb-3 pt-1 text-sm font-semibold text-stage-400 transition hover:text-stage-100;
+  }
+  .tab-on { @apply text-stage-100 after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:rounded-full after:bg-bulb; }
+  .step-num { @apply flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-stage-800 font-mono text-[11px] font-bold text-bulb; }
 }
+
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
 
 .marquee-bulbs {
   background-image: radial-gradient(circle, var(--color-bulb) 0 2.5px, transparent 3px);
@@ -86,7 +93,7 @@ body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; min-h
 }
 
 .spotlight {
-  background: radial-gradient(40% 60% at 50% 0%, rgba(247, 195, 95, 0.18), transparent 70%);
+  background: radial-gradient(50% 70% at 75% 0%, rgba(247, 195, 95, 0.09), transparent 70%);
 }
 
 .ref-kills { background: color-mix(in srgb, var(--color-kills) 18%, transparent); box-shadow: inset 0 -2px 0 var(--color-kills); }

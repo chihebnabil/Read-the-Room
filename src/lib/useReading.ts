@@ -18,12 +18,12 @@ export interface Step {
 }
 
 const STEPS: Omit<Step, 'status'>[] = [
-  { id: 'extract', label: 'Find every cultural reference in the set' },
-  { id: 'resolve', label: 'Match each one to Qloo’s taste graph' },
-  { id: 'score', label: 'Score them for tonight’s crowd vs. other US cities' },
-  { id: 'swap', label: 'Find swaps this crowd loves and rewrite the lines' },
-  { id: 'guess', label: 'Ask a model with no data what it would guess' },
-  { id: 'crowd', label: 'Build the crowd-work cheat sheet' },
+  { id: 'extract', label: 'Find references' },
+  { id: 'resolve', label: 'Match in Qloo' },
+  { id: 'score', label: 'Score vs. 7 cities' },
+  { id: 'swap', label: 'Swap and rewrite' },
+  { id: 'guess', label: 'AI-only guess' },
+  { id: 'crowd', label: 'Crowd work' },
 ]
 
 export interface ReadingState {
@@ -93,7 +93,7 @@ export function useReading() {
         step('extract', 'running')
         const ex = await extract({ data: { text, presetId } })
         patch(() => ({ lines: ex.lines, refs: ex.references.map((r) => ({ ...r, entity: null, alternatives: [] })), mode: ex.mode, extractedBy: ex.by }))
-        step('extract', 'done', `${ex.references.length} references${ex.by === 'preset' ? ' (pre-tagged sample)' : ''}`)
+        step('extract', 'done', `${ex.references.length} found${ex.by === 'preset' ? ', pre-tagged' : ''}`)
         if (ex.references.length === 0) throw new Error('No cultural references found. Try a set that name-drops shows, artists, brands or places.')
 
         current = 'resolve'
@@ -113,7 +113,7 @@ export function useReading() {
         const scores = Object.fromEntries(sc.scores.map((s) => [s.refId, s]))
         patch(() => ({ scores }))
         const weak = sc.scores.filter((s) => s.verdict === 'dies' || s.verdict === 'risky')
-        step('score', 'done', `${sc.scores.filter((s) => s.verdict === 'kills').length} kill, ${weak.length} need work`)
+        step('score', 'done', `${sc.scores.filter((s) => s.verdict === 'kills').length} kill · ${weak.length} need work`)
 
         await Promise.all([
           (async () => {
@@ -151,7 +151,7 @@ export function useReading() {
             patch(() => ({ guesses: Object.fromEntries(g.guesses.map((x) => [x.refId, x])), guessAvailable: g.available }))
             if (!g.available) return step('guess', 'skipped', 'Model unavailable')
             const wrong = g.guesses.filter((x) => scores[x.refId] && scores[x.refId].verdict !== 'unknown' && scores[x.refId].verdict !== x.verdict).length
-            step('guess', 'done', `Data disagrees on ${wrong} of ${g.guesses.length}`)
+            step('guess', 'done', `Differs on ${wrong} of ${g.guesses.length}`)
           })(),
           (async () => {
             step('crowd', 'running')
@@ -159,7 +159,7 @@ export function useReading() {
               const cw = await crowdWork({ data: { crowd: crowdInput } })
               addReceipts(cw.receipts)
               patch(() => ({ crowdWork: cw.crowdWork }))
-              step('crowd', 'done', `${cw.crowdWork.openers.length} openers`)
+              step('crowd', 'done', `${cw.crowdWork.openers.length} openers ready`)
             } catch (e) {
               step('crowd', 'error', (e as Error).message)
             }
