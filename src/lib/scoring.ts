@@ -1,4 +1,4 @@
-import type { Verdict } from './types'
+import { AGE_LABEL, type AgeBand, type Verdict } from './types'
 
 /**
  * Turns Qloo numbers into a stage call. Kept in one place so the thresholds are easy to audit.
@@ -21,6 +21,8 @@ export const THRESHOLDS = {
   killsStrength: 0.3,
   /** A regional favorite: strong here and measured in at most this share of other cities. */
   regionalShare: 1 / 3,
+  /** Qloo age skew (-1..1) at which a reference's audience clearly leans toward or away from tonight's age band. */
+  ageShift: 0.3,
 }
 
 const SCALE = 5
@@ -47,6 +49,11 @@ export function verdictFor(r: Reading, popularity: number | null, city: string):
   const elsewhere = `${r.seen} of ${r.of} other cities`
 
   if (r.local === null) {
+    if (r.seen === 0 && household)
+      return {
+        verdict: 'risky',
+        why: `Everyone knows it, but Qloo sees no city in the panel over-indexing on it, ${city} included. Safe, but generic.`,
+      }
     if (r.seen === 0) return { verdict: 'unknown', why: `Qloo has no location data for it in ${city} or the ${r.of} comparison cities.` }
     if (household)
       return {
@@ -61,13 +68,28 @@ export function verdictFor(r: Reading, popularity: number | null, city: string):
 
   const strong = r.local >= THRESHOLDS.killsStrength
   if (strong && r.seen <= r.of * THRESHOLDS.regionalShare) {
-    return { verdict: 'kills', why: `A regional favorite: strong here at ${pts(r.local)}/100, and measured in only ${elsewhere}.` }
+    return { verdict: 'kills', why: `A regional favorite: strong here at ${pts(r.local)}/100, and measured in ${r.seen === 0 ? 'none' : `only ${r.seen}`} of the ${r.of} other cities.` }
   }
   if (lift !== null && lift >= THRESHOLDS.killsLift && strong) return { verdict: 'kills', why: `This crowd over-indexes on it: ${pts(r.local)}/100${vs}.` }
   if (lift !== null && lift <= THRESHOLDS.diesLift) return { verdict: 'dies', why: `This crowd under-indexes on it: ${pts(r.local)}/100${vs}.` }
   if (lift !== null && lift >= THRESHOLDS.killsLift)
     return { verdict: 'risky', why: `Stronger here than in the typical city${vs}, but only ${pts(r.local)}/100: too weak to carry the bit on its own.` }
   return { verdict: 'risky', why: `About as strong here as anywhere: ${pts(r.local)}/100${vs}. It will be recognized, but it will not carry the bit.` }
+}
+
+/** Shift a city verdict one step when the reference's audience clearly skews toward or away from the room's age band. */
+export function applyAge(v: { verdict: Verdict; why: string }, skew: number | null, age: AgeBand, local: number | null): { verdict: Verdict; why: string } {
+  if (skew === null || v.verdict === 'unknown') return v
+  const s = `${skew >= 0 ? '+' : '−'}${Math.abs(skew).toFixed(2)}`
+  const band = AGE_LABEL[age]
+  if (skew <= -THRESHOLDS.ageShift) {
+    const down: Record<string, Verdict> = { kills: 'risky', risky: 'dies', dies: 'dies' }
+    return { verdict: down[v.verdict], why: `${v.why} Its audience also skews away from ${band} crowds (${s}).` }
+  }
+  if (skew >= THRESHOLDS.ageShift && v.verdict === 'risky' && local !== null && local >= THRESHOLDS.killsStrength) {
+    return { verdict: 'kills', why: `${v.why} But its audience skews toward ${band} crowds (${s}), which tips it.` }
+  }
+  return v
 }
 
 /** 0..100 room score: how much of the set's cultural material lands. */

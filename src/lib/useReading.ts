@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 import { useServerFn } from '@tanstack/react-start'
-import { crowdFn, extractFn, guessFn, resolveFn, scoreFn, swapFn, tourFn } from '~/server/room'
+import { crowdFn, extractFn, guessFn, resolveFn, rewriteFn, scoreFn, swapFn, tourFn } from '~/server/room'
 import type { AgeBand, CrowdWork, Guess, Receipt, ResolvedReference, Score, Swap, TourCell } from './types'
 
 export interface CrowdChoice {
@@ -70,6 +70,7 @@ export function useReading() {
   const score = useServerFn(scoreFn)
   const guess = useServerFn(guessFn)
   const swap = useServerFn(swapFn)
+  const rewrite = useServerFn(rewriteFn)
   const crowdWork = useServerFn(crowdFn)
   const tour = useServerFn(tourFn)
 
@@ -137,8 +138,22 @@ export function useReading() {
                 },
               })
               addReceipts(sw.receipts)
-              patch(() => ({ swaps: Object.fromEntries(sw.swaps.map((x) => [x.refId, x])), swapBy: sw.by }))
-              step('swap', 'done', `${sw.swaps.filter((x) => x.chosen).length} lines rewritten`)
+              // Show Qloo's swaps (and the new room score) right away; the model rewrites the lines next.
+              patch(() => ({ swaps: Object.fromEntries(sw.swaps.map((x) => [x.refId, x])), swapBy: null }))
+              const found = sw.swaps.filter((x) => x.chosen)
+              step('swap', 'running', `${found.length} swaps found, rewriting lines…`)
+              const rw = await rewrite({
+                data: {
+                  crowd: crowdInput,
+                  items: sw.swaps.map((x) => {
+                    const r = targets.find((t) => t.id === x.refId)!
+                    return { id: x.refId, surface: r.surface, role: r.role, lineText: x.original, candidates: x.candidates }
+                  }),
+                },
+              }).catch(() => null)
+              if (rw) patch(() => ({ swaps: Object.fromEntries(rw.swaps.map((x) => [x.refId, x])), swapBy: rw.by }))
+              else patch(() => ({ swapBy: 'simple' }))
+              step('swap', 'done', `${found.length} lines rewritten`)
             } catch (e) {
               step('swap', 'error', (e as Error).message)
             }

@@ -76,6 +76,8 @@ export interface Score {
   /** In how many of the other panel cities Qloo measured an audience. */
   seen: number
   of: number
+  /** How the reference's audience skews for the room's age band (-1..1), when the room has one. */
+  ageSkew?: number | null
   verdict: Verdict
   why: string
 }

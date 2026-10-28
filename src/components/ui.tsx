@@ -1,6 +1,11 @@
 import { KIND_LABEL, VERDICT_META, type Kind, type Verdict } from '~/lib/types'
 
 export const pct = (n: number | null | undefined) => (n === null || n === undefined ? '–' : `${Math.round(n * 100)}`)
+export const ordinal = (n: number) => {
+  const r = Math.round(n)
+  const s = r % 100 >= 11 && r % 100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[r % 10] ?? 'th'
+  return `${r}${s}`
+}
 export const signed = (n: number | null | undefined) =>
   n === null || n === undefined ? '–' : `${n >= 0 ? '+' : '−'}${Math.abs(Math.round(n * 100))}`
 

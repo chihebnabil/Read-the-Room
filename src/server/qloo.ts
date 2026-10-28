@@ -1,3 +1,4 @@
+import { getCache } from '@vercel/functions'
 import type { AgeBand, Kind, QlooEntity, Receipt, TasteTag } from '~/lib/types'
 import * as sample from './sample'
 
@@ -19,8 +20,31 @@ export class QlooError extends Error {
 }
 
 // Private server-side caching is allowed by the hackathon rules and keeps us well inside the quota.
+// Two layers: this instance's memory, then Vercel's runtime cache shared by every serverless instance
+// (it falls back to memory outside Vercel). The shared layer is best-effort: it can never fail a read.
 const cache = new Map<string, { at: number; body: Json }>()
 const TTL = 6 * 60 * 60 * 1000
+const shared = (() => {
+  try {
+    return getCache({ namespace: 'qloo-v1' })
+  } catch {
+    return null
+  }
+})()
+
+async function sharedGet(key: string): Promise<Json | null> {
+  if (!shared) return null
+  try {
+    const hit = await Promise.race([shared.get(key), new Promise<null>((r) => setTimeout(() => r(null), 1500))])
+    return hit && typeof hit === 'object' ? (hit as Json) : null
+  } catch {
+    return null
+  }
+}
+
+function sharedSet(key: string, body: Json) {
+  shared?.set(key, body, { ttl: TTL / 1000, name: '' }).catch(() => {})
+}
 
 // The hackathon key allows 10 requests per second. Stay under it: a rate-limited call must never read as
 // "no audience here", so we pace requests instead of relying on retries.
@@ -42,7 +66,7 @@ function pace(): Promise<void> {
 }
 
 // Identical requests made at the same time (for example two cities sharing the comparison panel) share one call.
-const inflight = new Map<string, Promise<Json>>()
+const inflight = new Map<string, Promise<{ body: Json; live: boolean }>>()
 
 function clean(params: Params) {
   const out: Record<string, string> = {}
@@ -64,14 +88,21 @@ async function get(label: string, path: string, params: Params, receipts: Receip
   }
 
   let pending = inflight.get(key)
-  const shared = Boolean(pending)
+  const joined = Boolean(pending)
   if (!pending) {
-    pending = fetchWithRetry(url, path).finally(() => inflight.delete(key))
+    pending = (async () => {
+      const stored = await sharedGet(key)
+      if (stored) return { body: stored, live: false }
+      const body = await fetchWithRetry(url, path)
+      sharedSet(key, body)
+      return { body, live: true }
+    })().finally(() => inflight.delete(key))
     inflight.set(key, pending)
   }
-  const body = await pending
-  if (!shared) cache.set(key, { at: Date.now(), body })
-  receipts.push({ label, endpoint: path, params: p, ms: Date.now() - started, source: shared ? 'cache' : 'live', resultCount: count(body) })
+  const { body, live } = await pending
+  if (!joined) cache.set(key, { at: Date.now(), body })
+  const source = live && !joined ? 'live' : 'cache'
+  receipts.push({ label, endpoint: path, params: p, ms: Date.now() - started, source, resultCount: count(body) })
   return body
 }
 
@@ -145,13 +176,36 @@ function crowdSignals(crowd: Crowd): Params {
   }
 }
 
-const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+const norm = (s: string) =>
+  s
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
 
-/** Resolve a name to Qloo entities. The first result is the best match: exact names win over fuzzy top hits. */
+const STOP = new Set(['the', 'a', 'an', 'and', 'of'])
+const words = (s: string) => norm(s).split(' ').filter((w) => w && !STOP.has(w))
+
+/**
+ * Search returns fuzzy hits ("Logan Roy" finds Logan Paul), so a result only counts if the names agree:
+ * every word of the query appears in it ("Fortnite" -> "Fortnite Battle Royale"), or it is a shorter form
+ * of the query ("Coachella Valley Music and Arts Festival" -> "Coachella Music Festival").
+ */
+export function sameName(query: string, candidate: string) {
+  const q = words(query)
+  const c = words(candidate)
+  if (q.length === 0 || c.length === 0) return false
+  return q.every((w) => c.includes(w)) || c.every((w) => q.includes(w))
+}
+
+/** Resolve a name to Qloo entities whose names agree with it. Exact names first. */
 export async function searchEntity(name: string, kind: Kind, receipts: Receipt[]): Promise<QlooEntity[]> {
   if (!qlooIsLive()) return sample.search(name, kind, receipts)
   const body = await get(`Find "${name}"`, '/search', { query: name, types: urn(kind), take: 5 }, receipts)
-  const list = entityList(body).filter((e) => e?.name).map((e) => toEntity(e, kind))
+  const list = entityList(body)
+    .filter((e) => e?.name && sameName(name, String(e.name)))
+    .map((e) => toEntity(e, kind))
   const exact = list.findIndex((e) => norm(e.name) === norm(name))
   if (exact > 0) list.unshift(...list.splice(exact, 1))
   return list
@@ -184,6 +238,23 @@ export async function affinityFor(
     if (out.has(id)) out.set(id, num(e.query?.affinity))
   }
   return out
+}
+
+/**
+ * How each entity's audience skews by age (Insights with filter.type=urn:demographics), from -1 to 1 per age band.
+ * Location affinities with an age signal all collapse to about 0.96, so age is read here instead.
+ */
+export async function ageSkewFor(ids: string[], receipts: Receipt[]): Promise<Map<string, Partial<Record<AgeBand, number>>>> {
+  if (ids.length === 0) return new Map()
+  if (!qlooIsLive()) return sample.ageSkew(ids, receipts)
+  const body = await get(
+    `Age profile of ${ids.length} audience${ids.length > 1 ? 's' : ''}`,
+    '/v2/insights',
+    { 'filter.type': 'urn:demographics', 'signal.interests.entities': ids.join(',') },
+    receipts,
+  )
+  const rows: Json[] = Array.isArray(body?.results?.demographics) ? body.results.demographics : []
+  return new Map(rows.map((r) => [String(r.entity_id), (r.query?.age ?? {}) as Partial<Record<AgeBand, number>>]))
 }
 
 /** Entities like `id` that this crowd loves, limited to well-known ones so the swap still gets recognized. */

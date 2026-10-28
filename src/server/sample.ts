@@ -2,7 +2,7 @@
  * Sample mode: used only when no QLOO_API_KEY is set, so the app can be developed and previewed
  * without a key. Every number here is invented and the UI labels it "Sample data", never as Qloo's.
  */
-import type { Kind, QlooEntity, Receipt, TasteTag } from '~/lib/types'
+import type { AgeBand, Kind, QlooEntity, Receipt, TasteTag } from '~/lib/types'
 import type { Crowd } from './qloo'
 
 type Region = 'south' | 'northeast' | 'west' | 'midwest' | 'mountain'
@@ -196,6 +196,18 @@ export function affinity(kind: Kind, ids: string[], crowd: Crowd, receipts: Rece
     ids.map((id) => {
       const x = score(id, crowd)
       return [id, x < MEASURABLE ? null : toAffinity(x)] as [string, number | null]
+    }),
+  )
+}
+
+export function ageSkew(ids: string[], receipts: Receipt[]) {
+  receipt(receipts, `Age profile of ${ids.length} audiences`, '/v2/insights', { 'filter.type': 'urn:demographics', 'signal.interests.entities': ids.join(',') }, ids.length)
+  return new Map(
+    ids.map((id) => {
+      const lean = itemById(id)?.item.lean ?? {}
+      const young = Math.max(-0.9, Math.min(0.9, (lean.young ?? 0) * 3))
+      const old = Math.max(-0.9, Math.min(0.9, (lean.old ?? 0) * 3))
+      return [id, { '24_and_younger': young, '25_to_29': young / 2, '35_to_44': 0, '45_to_54': old / 2, '55_and_older': old }] as [string, Partial<Record<AgeBand, number>>]
     }),
   )
 }

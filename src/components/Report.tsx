@@ -4,7 +4,7 @@ import { roomScore } from '~/lib/scoring'
 import { AGE_LABEL, KIND_LABEL, VERDICT_META, type Kind, type ResolvedReference, type Swap, type Verdict } from '~/lib/types'
 import type { ReadingState } from '~/lib/useReading'
 import { RoadManager } from './RoadManager'
-import { Bar, Gauge, KindTag, Spinner, VerdictBadge, pct, signed } from './ui'
+import { Bar, Gauge, KindTag, Spinner, VerdictBadge, ordinal, pct, signed } from './ui'
 
 type Tab = 'set' | 'rewrite' | 'crowd' | 'tour' | 'manager' | 'receipts'
 
@@ -258,7 +258,7 @@ function RefDetail({ state, refItem: r, rejected, onToggle }: { state: ReadingSt
           <div className="min-w-0 flex-1 text-xs">
             <p className="font-semibold text-stage-200">Qloo match: {r.entity.name}</p>
             {r.entity.description && <p className="mt-0.5 line-clamp-2 text-stage-500" title={r.entity.description}>{r.entity.description}</p>}
-            {r.entity.popularity !== null && <p className="text-stage-500">Popularity: {pct(r.entity.popularity)}th percentile</p>}
+            {r.entity.popularity !== null && <p className="text-stage-500">Popularity: {ordinal(Math.min(99, r.entity.popularity * 100))} percentile</p>}
           </div>
         </div>
       ) : (
@@ -269,6 +269,15 @@ function RefDetail({ state, refItem: r, rejected, onToggle }: { state: ReadingSt
         <div className="space-y-3">
           <Bar label={`This crowd (${state.crowd.city})`} value={s.local} tone={s.verdict} />
           <Bar label={`Typical city (median of ${s.of} others)`} value={s.baseline} tone="muted" />
+          {state.crowd.age && s.ageSkew != null && (
+            <p className="flex items-center justify-between rounded-lg bg-stage-950 px-3 py-2 text-xs">
+              <span className="text-stage-400">Audience age fit ({AGE_LABEL[state.crowd.age]})</span>
+              <span className={`font-mono font-bold ${s.ageSkew >= 0.3 ? 'text-kills' : s.ageSkew <= -0.3 ? 'text-dies' : 'text-stage-200'}`}>
+                {s.ageSkew >= 0 ? '+' : '−'}
+                {Math.abs(s.ageSkew).toFixed(2)}
+              </span>
+            </p>
+          )}
           <p className="text-sm leading-relaxed text-stage-300">{s.why}</p>
         </div>
       )}
@@ -392,6 +401,7 @@ function RewriteView({ state, rejected }: { state: ReadingState; rejected: Set<s
         <p className="eyebrow">
           {changed} line{changed === 1 ? '' : 's'} punched up for {state.crowd.city}
           {state.swapBy === 'simple' ? ' (simple swaps, model unavailable)' : ''}
+          {state.swapBy === null && Object.keys(state.swaps).length > 0 ? ' · rewriting the lines…' : ''}
         </p>
         <button
           className="btn-line text-xs"

@@ -51,7 +51,7 @@ type Body = {
   }[]
 }
 
-async function post(payload: Record<string, unknown>): Promise<Body> {
+async function post(payload: Record<string, unknown>, timeoutMs = 90_000): Promise<Body> {
   const key = process.env.OPENROUTER_API_KEY
   if (!key) throw new AIError('OPENROUTER_API_KEY is not set.')
   const res = await fetch(ENDPOINT, {
@@ -63,7 +63,9 @@ async function post(payload: Record<string, unknown>): Promise<Body> {
       'X-Title': 'Read the Room',
     },
     body: JSON.stringify({ model: model(), ...payload }),
-    signal: AbortSignal.timeout(90_000),
+    signal: AbortSignal.timeout(timeoutMs),
+  }).catch((e) => {
+    throw new AIError(`OpenRouter request failed: ${(e as Error).message}`)
   })
   const body = (await res.json().catch(() => null)) as Body | null
   if (!res.ok || !body || body.error) {
@@ -77,6 +79,7 @@ export async function structuredChat<T extends z.ZodType>(opts: {
   schema: T
   messages: ChatMessage[]
   maxTokens?: number
+  timeoutMs?: number
 }): Promise<z.infer<T>> {
   const body = await post({
     messages: opts.messages,
@@ -87,7 +90,9 @@ export async function structuredChat<T extends z.ZodType>(opts: {
     },
     // Only route to providers that honor the JSON schema.
     provider: { require_parameters: true },
-  })
+    // These are short, well-specified tasks: thinking adds seconds without better output.
+    reasoning: { enabled: false },
+  }, opts.timeoutMs)
   const choice = body.choices?.[0]
   if (choice?.message?.refusal) throw new AIError('The model declined this request.')
   const text = choice?.message?.content

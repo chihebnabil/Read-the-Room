@@ -1,7 +1,7 @@
 import { CITIES } from '~/lib/presets'
-import { strength, verdictFor, type Reading } from '~/lib/scoring'
+import { applyAge, strength, verdictFor, type Reading } from '~/lib/scoring'
 import type { Kind, QlooEntity, Receipt, Verdict } from '~/lib/types'
-import { affinityFor, type Crowd } from './qloo'
+import { affinityFor, ageSkewFor, type Crowd } from './qloo'
 
 /**
  * How a reference plays with a crowd, read the way Qloo means it: the same entity compared across cities.
@@ -18,6 +18,8 @@ export interface Read extends Reading {
   /** The strength to display: 0 when Qloo measured no audience here. */
   shown: number | null
   lift: number | null
+  /** How the reference's audience skews for tonight's age band, -1..1. */
+  ageSkew: number | null
 }
 
 function median(xs: number[]) {
@@ -36,8 +38,11 @@ export async function readKind(kind: Kind, entities: QlooEntity[], crowd: Crowd,
   if (ids.length === 0) return new Map()
   const label = (city: string) => `Score ${ids.length} ${kind.replace('_', ' ')}${ids.length > 1 ? 's' : ''} in ${city}`
   const others = PANEL.filter((c) => !same(c, crowd.city))
-  const [local, ...panel] = await Promise.all([
-    affinityFor(kind, ids, crowd, receipts),
+  // With an age signal every affinity collapses to about 0.96, so the city is read on its own and
+  // the age band is applied from each audience's age skew.
+  const [local, skews, ...panel] = await Promise.all([
+    affinityFor(kind, ids, { city: crowd.city }, receipts),
+    crowd.age ? ageSkewFor(ids, receipts).catch(() => null) : Promise.resolve(null),
     ...others.map((city) => affinityFor(kind, ids, { city }, receipts, `${label(city)} (comparison)`).catch(() => null)),
   ])
   const answered = panel.filter((p): p is Map<string, number | null> => p !== null)
@@ -52,9 +57,11 @@ export async function readKind(kind: Kind, entities: QlooEntity[], crowd: Crowd,
       seen,
       of: answered.length,
     }
-    const v = verdictFor(reading, e.popularity, crowd.city)
+    const ageSkew = crowd.age ? (skews?.get(e.id)?.[crowd.age] ?? null) : null
+    const cityCall = verdictFor(reading, e.popularity, crowd.city)
+    const v = crowd.age ? applyAge(cityCall, ageSkew, crowd.age, reading.local) : cityCall
     const shown = reading.local ?? (seen > 0 ? 0 : null)
-    out.set(e.id, { ...reading, ...v, shown, lift: shown !== null && reading.baseline !== null ? shown - reading.baseline : null })
+    out.set(e.id, { ...reading, ...v, shown, ageSkew, lift: shown !== null && reading.baseline !== null ? shown - reading.baseline : null })
   }
   return out
 }
