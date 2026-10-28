@@ -59,7 +59,7 @@ export function Report({ state, onTour }: { state: ReadingState; onTour: (cities
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <p className="eyebrow">Tonight’s room</p>
-              {state.mode === 'sample' && <span className="rounded-md bg-bulb/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-bulb">Sample data, not Qloo</span>}
+              {state.mode === 'sample' && <span className="rounded-md bg-risky/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-risky">Sample data, not Qloo</span>}
               {state.mode === 'live' && <span className="rounded-md bg-kills/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-kills">Live Qloo data</span>}
             </div>
             <h2 className="display mt-1.5 truncate text-4xl text-stage-100 sm:text-5xl">{state.crowd.city}</h2>
@@ -267,7 +267,7 @@ function RefDetail({ state, refItem: r, rejected, onToggle }: { state: ReadingSt
 
       {s && s.verdict !== 'unknown' && (
         <div className="space-y-3">
-          <Bar label={`This crowd (${state.crowd.city})`} value={s.local} tone="bulb" />
+          <Bar label={`This crowd (${state.crowd.city})`} value={s.local} tone={s.verdict} />
           <Bar label={`Typical city (median of ${s.of} others)`} value={s.baseline} tone="muted" />
           <p className="text-sm leading-relaxed text-stage-300">{s.why}</p>
         </div>
@@ -353,7 +353,7 @@ function ReceiptLine({ r }: { r: ReadingState['receipts'][number] }) {
   return (
     <div className="min-w-0 rounded-lg bg-stage-950 p-2.5 font-mono text-[11px] leading-relaxed">
       <p className="break-all text-stage-300">
-        <span className={r.source === 'live' ? 'text-kills' : r.source === 'cache' ? 'text-stage-200' : 'text-bulb'}>{r.source.toUpperCase()}</span> GET {r.endpoint}
+        <span className={r.source === 'live' ? 'text-kills' : r.source === 'cache' ? 'text-stage-200' : 'text-risky'}>{r.source.toUpperCase()}</span> GET {r.endpoint}
         <span className="text-stage-500"> · {r.resultCount} results{r.ms ? ` · ${r.ms}ms` : ''}</span>
       </p>
       {Object.entries(r.params).map(([k, v]) => (

@@ -48,9 +48,7 @@ function Home() {
             <p className="eyebrow text-bulb">For comedians, speakers and hosts</p>
             <h1 className="display mt-4 text-[44px] leading-[0.95] text-stage-100 sm:text-6xl lg:text-[68px]">
               <span className="block">Know the room</span>
-              <span className="block [text-wrap:balance]">
-                <span className="text-bulb">before</span> you walk on stage
-              </span>
+              <span className="block text-stage-400 [text-wrap:balance]">before you walk on stage</span>
             </h1>
             <p className="mt-5 max-w-xl text-[17px] leading-relaxed text-stage-300">
               The same joke kills in Austin and dies in Brooklyn. Paste your set, pick tonight’s city, and Read the Room checks every
@@ -211,7 +209,7 @@ function OneLineTwoRooms() {
       </div>
       <div className="space-y-5 p-5">
         <p className="font-mono text-[15px] leading-relaxed text-stage-200">
-          I fell asleep to <span className="ref-risky rounded px-1 font-semibold text-stage-100">The Joe Rogan Experience</span> and woke up owning an ice bath.
+          I fell asleep to <span className="ref-pending rounded px-1 font-semibold text-stage-100">The Joe Rogan Experience</span> and woke up owning an ice bath.
         </p>
         <ul className="space-y-2">
           {rows.map((r) => (

@@ -33,7 +33,9 @@ export function KindTag({ kind }: { kind: Kind }) {
   )
 }
 
-export function Bar({ value, label, tone }: { value: number | null; label: string; tone: 'bulb' | 'muted' }) {
+const BAR_TONE = { kills: 'bg-kills', risky: 'bg-risky', dies: 'bg-dies', muted: 'bg-stage-500' }
+
+export function Bar({ value, label, tone }: { value: number | null; label: string; tone: keyof typeof BAR_TONE }) {
   return (
     <div>
       <div className="flex items-baseline justify-between text-xs">
@@ -42,7 +44,7 @@ export function Bar({ value, label, tone }: { value: number | null; label: strin
       </div>
       <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-stage-800">
         <div
-          className={`h-full rounded-full transition-all duration-700 ${tone === 'bulb' ? 'bg-bulb' : 'bg-stage-500'}`}
+          className={`h-full rounded-full transition-all duration-700 ${BAR_TONE[tone]}`}
           style={{ width: `${value === null ? 0 : Math.max(2, value * 100)}%` }}
         />
       </div>

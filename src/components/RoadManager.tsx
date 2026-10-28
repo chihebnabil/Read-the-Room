@@ -154,7 +154,7 @@ export function RoadManager({ state }: { state: ReadingState }) {
                 <div className="mt-2 space-y-1 font-mono text-[11px] text-stage-500">
                   {it.event.receipts.map((r, j) => (
                     <p key={j} className="break-all">
-                      <span className={r.source === 'live' ? 'text-kills' : r.source === 'cache' ? 'text-stage-300' : 'text-bulb'}>{r.source.toUpperCase()}</span> {r.endpoint}?
+                      <span className={r.source === 'live' ? 'text-kills' : r.source === 'cache' ? 'text-stage-300' : 'text-risky'}>{r.source.toUpperCase()}</span> {r.endpoint}?
                       {Object.entries(r.params)
                         .map(([k, v]) => `${k}=${v}`)
                         .join('&')}

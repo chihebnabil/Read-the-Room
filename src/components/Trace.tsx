@@ -51,7 +51,7 @@ export function Trace({ state }: { state: ReadingState }) {
               .reverse()
               .map((r, i) => (
                 <p key={i} className="truncate">
-                  <span className={r.source === 'live' ? 'text-kills' : r.source === 'cache' ? 'text-stage-300' : 'text-bulb'}>
+                  <span className={r.source === 'live' ? 'text-kills' : r.source === 'cache' ? 'text-stage-300' : 'text-risky'}>
                     {r.source === 'live' ? 'GET' : r.source === 'cache' ? 'HIT' : 'SAMPLE'}
                   </span>{' '}
                   {r.endpoint} <span className="text-stage-500">· {r.label}</span>
