@@ -59,7 +59,7 @@ function Lab() {
         )}
       </button>
       {!rows.length && !running && (
-        <p className="mt-2 text-xs text-stage-500">Takes about a minute: every reference is scored live in {CITIES.length} cities. Last run: 51% of 130 calls differed.</p>
+        <p className="mt-2 text-xs text-stage-500">Takes about a minute: every reference is scored live in {CITIES.length} cities. Last run: 54% of 136 calls differed.</p>
       )}
       {mode === 'sample' && <p className="mt-2 text-sm text-risky">Qloo is in sample mode on this server, so these numbers are not meaningful.</p>}
       {error && <p className="mt-2 text-sm text-dies">{error}</p>}

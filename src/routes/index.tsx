@@ -272,9 +272,9 @@ function WhyQloo() {
         </div>
         <Link to="/lab" className="panel group block p-6 transition hover:border-bulb/40">
           <p className="eyebrow">Benchmark · 8 cities · live Qloo data</p>
-          <p className="display mt-3 text-6xl text-bulb">51%</p>
+          <p className="display mt-3 text-6xl text-bulb">54%</p>
           <p className="mt-2 text-sm leading-relaxed text-stage-300">
-            of 130 calls where a model with no data disagreed with Qloo. It called 🔥 twice as often as the data supports.
+            of 136 calls where a model with no data disagreed with Qloo. It called 🔥 more than twice as often as the data supports.
           </p>
           <p className="mt-4 text-sm font-semibold text-bulb group-hover:underline">See every call →</p>
         </Link>

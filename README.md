@@ -15,7 +15,7 @@ Paste a set, speech or toast and pick a city (and optionally the room: college s
 
 It also asks a model with no data to guess the same verdicts, and shows where the guess and Qloo disagree. That is the point of the project: without Qloo, an AI can only guess in stereotypes.
 
-**The benchmark** (`/lab`): every reference in both sample scripts, in 8 cities. On live Qloo data, a model with no data disagreed with Qloo on **51% of 130 calls**, called 🔥 twice as often as the data supports (70 vs. 35), and said "kills" 9 times where Qloo measured "dies".
+**The benchmark** (`/lab`): every reference in both sample scripts, in 8 cities. On live Qloo data, a model with no data disagreed with Qloo on **54% of 136 calls**, called 🔥 more than twice as often as the data supports (79 vs. 35), and said "kills" 11 times where Qloo measured "dies".
 
 ### The Road Manager
 
@@ -47,6 +47,7 @@ A reference is only ever compared with itself in other cities, never with other 
 - 🔥 **Kills**: at least 30/100 here, and either 5+ points above its median in the other cities or a regional favorite (measured in at most a third of them).
 - 💀 **Dies**: 5+ points below its median, or no measurable audience here while other cities have one.
 - 😬 **Risky**: about as strong here as anywhere, or a household name (top 0.5% popularity) this crowd does not over-index on: recognized, not loved.
+- **Age bands** (college show, corporate gig, casino theater): with an age signal Qloo's location affinities all collapse to about 0.96, so the city is read on its own and the room's age band shifts the verdict one step when the reference's audience clearly skews toward or away from it (`filter.type=urn:demographics`, skew of ±0.3 or more).
 
 The comparison panel is Nashville, Brooklyn, Austin, Salt Lake City, Los Angeles, Chicago, Boston and Atlanta.
 
