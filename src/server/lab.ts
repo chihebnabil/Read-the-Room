@@ -27,7 +27,7 @@ export const labCityFn = createServerFn({ method: 'POST' })
     const receipts: Receipt[] = []
     const crowd = { city: data.city, age: null, venue: 'Comedy club' }
     const rows: LabRow[] = []
-    for (const preset of PRESETS) {
+    for (const preset of PRESETS.filter((p) => p.benchmark !== false)) {
       const refs = preset.refs.map(([, , name, kind], i) => ({ id: `${preset.id}-${i}`, name, kind }))
       const entities = await Promise.all(refs.map((r) => searchEntity(r.name, r.kind, receipts).then((e) => e[0] ?? null).catch(() => null)))
       const [scores, guesses] = await Promise.all([

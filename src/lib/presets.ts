@@ -7,6 +7,10 @@ export interface Preset {
   text: string
   /** Pre-tagged references so the demo does not depend on the model's extraction. [line, surface, name, kind, role] */
   refs: [number, string, string, Kind, string][]
+  /** Included in the /lab benchmark. The published benchmark numbers cover the stand-up and keynote scripts. */
+  benchmark?: boolean
+  /** The venue to select with this preset. */
+  venue?: string
 }
 
 export const PRESETS: Preset[] = [
@@ -65,6 +69,30 @@ export const PRESETS: Preset[] = [
       [6, 'Beyoncé', 'Beyoncé', 'artist', 'a perfectionist superstar whose tours sell out'],
     ],
   },
+  {
+    id: 'radio',
+    label: 'Radio ad',
+    blurb: '30-second spot, 6 references',
+    benchmark: false,
+    venue: 'market',
+    text: [
+      "Saturday's here. The Cowboys kick off at noon and forty people are coming over.",
+      'You could wait in the drive-thru at Chick-fil-A. Or you could be the hero of the parking lot.',
+      'The Emberline Tailgate Pro lights up faster than a Friday Night Lights pep rally.',
+      'It folds down smaller than a Bass Pro Shops tackle box.',
+      "And it's as loud as a Kenny Chesney stadium show, minus the hangover.",
+      'Grab one at Costco this weekend.',
+      'Emberline Grills. Bring the party.',
+    ].join('\n'),
+    refs: [
+      [0, 'Cowboys', 'Dallas Cowboys', 'brand', 'the local football team everyone tailgates for'],
+      [1, 'Chick-fil-A', 'Chick-fil-A', 'brand', 'the fast-food spot with a famously long drive-thru line'],
+      [2, 'Friday Night Lights', 'Friday Night Lights', 'tv_show', 'a show about hometown football spirit'],
+      [3, 'Bass Pro Shops', 'Bass Pro Shops', 'brand', 'an outdoors store for fishing and camping gear'],
+      [4, 'Kenny Chesney', 'Kenny Chesney', 'artist', 'a musician famous for loud, party-like stadium shows'],
+      [5, 'Costco', 'Costco', 'brand', 'the big-box store where people buy in bulk for a party'],
+    ],
+  },
 ]
 
 export const CITIES = ['Nashville', 'Brooklyn', 'Austin', 'Salt Lake City', 'Los Angeles', 'Chicago', 'Boston', 'Atlanta']
@@ -76,4 +104,5 @@ export const VENUES: { id: string; label: string; age: AgeBand | null }[] = [
   { id: 'college', label: 'College show', age: '24_and_younger' },
   { id: 'corporate', label: 'Corporate gig', age: '35_to_44' },
   { id: 'casino', label: 'Casino theater', age: '55_and_older' },
+  { id: 'market', label: 'Ad market', age: null },
 ]

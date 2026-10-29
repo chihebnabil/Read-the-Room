@@ -14,12 +14,14 @@ Paste a set, speech or toast and pick a city (and optionally the room: college s
 2. **Matches** each one to an entity in Qloo's taste graph.
 3. **Scores** it for tonight's crowd against the same reference in 7 other US cities: 🔥 kills, 😬 risky, 💀 dies here.
 4. **Swaps** weak references for well-known ones this crowd actually loves, and rewrites the line so the joke still works.
-5. **Builds a crowd-work cheat sheet** from what the city over-indexes on.
+5. **Builds a crowd-work cheat sheet** from what the city over-indexes on. It describes the crowd's taste, never who the crowd is: Qloo themes about identity (race, gender, sexuality, religion) are left out of the room profile, and the openers never make assumptions about the audience.
 6. **Tour map**: the same set scored across up to 8 cities, with the city where it plays best.
+
+Three sample scripts are built in: a **stand-up set**, a **keynote opener** and a **30-second radio ad**. The radio ad shows the agency use case: one campaign script, read for every market, with the local swaps it needs before it airs.
 
 It also asks a model with no data to guess the same verdicts, and shows where the guess and Qloo disagree. That is the point of the project: without Qloo, an AI can only guess in stereotypes.
 
-**The benchmark** (`/lab`): every reference in both sample scripts, in 8 cities. On live Qloo data, a model with no data disagreed with Qloo on **54% of 136 calls**. Of the 35 bits Qloo says die, the model would have kept 23; it said "kills" 12 times where Qloo says "dies", and it called 🔥 78 times where the data supports 35. (The model's guesses vary slightly from run to run.) Disagreement does not prove the model wrong, since affinity is not laughter, but it shows how often a model-only tool would give a performer different advice than the measured data.
+**The benchmark** (`/lab`): every reference in the stand-up and keynote scripts, in 8 cities. On live Qloo data, a model with no data disagreed with Qloo on **54% of 136 calls**. Of the 35 bits Qloo says die, the model would have kept 23; it said "kills" 12 times where Qloo says "dies", and it called 🔥 78 times where the data supports 35. (The model's guesses vary slightly from run to run.) Disagreement does not prove the model wrong, since affinity is not laughter, but it shows how often a model-only tool would give a performer different advice than the measured data.
 
 ### The Road Manager
 
@@ -95,7 +97,7 @@ Vercel: import the repo and set `QLOO_API_KEY`, `QLOO_BASE_URL`, `OPENROUTER_API
 - Qloo results describe what groups tend to like, not what any one person in the room will do.
 - Affinity is not laughter. A reference the crowd loves still needs a good joke around it.
 - No personal data is sent to Qloo: only entity names, a city and an optional age band.
-- Qloo responses are cached server-side for 6 hours: in the instance's memory, then in Vercel's runtime cache shared by every serverless instance. Nothing is stored in the browser or committed to the repo.
+- Qloo responses are cached server-side for a week: in the instance's memory, then in Vercel's runtime cache shared by every serverless instance. Nothing is stored in the browser or committed to the repo.
 - Requests are paced under the key's 10-per-second limit, so a rate-limited call is never mistaken for "no audience here".
 - Some entities (for example a few chains and actors) have no location data in Qloo; they show as "No data" instead of a guess.
 

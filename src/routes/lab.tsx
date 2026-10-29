@@ -43,7 +43,7 @@ function Lab() {
       <p className="eyebrow">Benchmark</p>
       <h1 className="display mt-2 text-4xl text-stage-100 sm:text-5xl">AI alone vs. Qloo</h1>
       <p className="mt-4 max-w-3xl text-stage-300">
-        Every reference in both sample scripts, in {CITIES.length} cities. For each one we compare a model’s guess with no data against the
+        Every reference in the stand-up and keynote scripts, in {CITIES.length} cities. For each one we compare a model’s guess with no data against the
         verdict computed from Qloo’s numbers. Disagreement does not prove the model wrong, but it shows how often a model-only tool would give
         a performer different advice than the measured data.
       </p>

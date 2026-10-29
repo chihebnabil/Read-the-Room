@@ -45,14 +45,14 @@ function Home() {
         <div className="spotlight pointer-events-none absolute inset-0" />
         <div className="wrap relative grid items-center gap-10 py-14 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-14 lg:py-20">
           <div>
-            <p className="eyebrow text-bulb">For comedians, speakers and hosts</p>
+            <p className="eyebrow text-bulb">For comedians, speakers, hosts and brands</p>
             <h1 className="display mt-4 text-[44px] leading-[0.95] text-stage-100 sm:text-6xl lg:text-[68px]">
               <span className="block">Know the room</span>
               <span className="block text-stage-400 [text-wrap:balance]">before you walk on stage</span>
             </h1>
             <p className="mt-5 max-w-xl text-[17px] leading-relaxed text-stage-300">
               The same joke kills in Austin and dies in Brooklyn. Paste your set, pick tonight’s city, and Read the Room checks every
-              reference against what that crowd actually loves, using Qloo’s taste data, then rewrites the lines that will not land.
+              reference against what that crowd actually loves, using Qloo’s taste data, then suggests swaps for the lines that will not land.
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <button className="btn-bulb px-5 py-3.5" disabled={state?.running} onClick={demo}>
@@ -62,7 +62,7 @@ function Home() {
                 Use my own set
               </a>
             </div>
-            <p className="mt-3 text-xs text-stage-500">The demo reads a set written for Texas in front of a Brooklyn crowd. About 30 seconds, live Qloo data.</p>
+            <p className="mt-3 text-xs text-stage-500">The demo reads a set written for Texas in front of a Brooklyn crowd. About 40 seconds on a cold start: over 100 live Qloo calls.</p>
           </div>
           <OneLineTwoRooms />
         </div>
@@ -105,6 +105,7 @@ function Home() {
                       onClick={() => {
                         setPresetId(p.id)
                         setText(p.text)
+                        setVenueId(p.venue ?? VENUES[0].id)
                       }}
                       className={`chip ${preset?.id === p.id ? 'chip-on' : ''}`}
                     >
@@ -190,7 +191,16 @@ function Home() {
 
       <HowStrip />
       <WhyQloo />
-      <WhoFor />
+      <WhoFor
+        onTryAd={() => {
+          const p = PRESETS.find((x) => x.id === 'radio')!
+          setPresetId(p.id)
+          setText(p.text)
+          setCity('Brooklyn')
+          setVenueId(p.venue ?? VENUES[0].id)
+          document.getElementById('set')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }}
+      />
     </>
   )
 }
@@ -283,7 +293,7 @@ function WhyQloo() {
   )
 }
 
-function WhoFor() {
+function WhoFor({ onTryAd }: { onTryAd: () => void }) {
   const who = [
     ['Touring comedians', 'One set, 40 cities. Know which bits travel and which need a local swap before soundcheck.'],
     ['Keynote speakers', 'Open with a reference the room actually shares, not the one that played well at headquarters.'],
@@ -300,6 +310,11 @@ function WhoFor() {
             <div key={t} className="border-t border-stage-700 pt-4">
               <p className="font-bold text-stage-100">{t}</p>
               <p className="mt-1.5 text-sm leading-relaxed text-stage-400">{b}</p>
+              {t === 'Agencies and brands' && (
+                <button type="button" onClick={onTryAd} className="mt-2 text-sm font-semibold text-bulb hover:underline">
+                  Try the radio ad →
+                </button>
+              )}
             </div>
           ))}
         </div>

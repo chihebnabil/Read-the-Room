@@ -23,7 +23,8 @@ export class QlooError extends Error {
 // Two layers: this instance's memory, then Vercel's runtime cache shared by every serverless instance
 // (it falls back to memory outside Vercel). The shared layer is best-effort: it can never fail a read.
 const cache = new Map<string, { at: number; body: Json }>()
-const TTL = 6 * 60 * 60 * 1000
+// Taste data moves slowly; a week keeps the demo fast through judging while staying well inside the quota.
+const TTL = 7 * 24 * 60 * 60 * 1000
 const shared = (() => {
   try {
     return getCache({ namespace: 'qloo-v1' })
@@ -304,17 +305,21 @@ export async function crowdTags(tagType: string, parents: Kind, crowd: Crowd, re
   const body = await get(
     `Taste profile of ${crowd.city}: ${tagType.split(':').slice(-2).join(' ')}`,
     '/v2/insights',
-    { 'filter.type': 'urn:tag', 'filter.tag.types': tagType, 'filter.parents.types': urn(parents), ...crowdSignals(crowd), take: take + 4 },
+    { 'filter.type': 'urn:tag', 'filter.tag.types': tagType, 'filter.parents.types': urn(parents), ...crowdSignals(crowd), take: take + 12 },
     receipts,
   )
   const tags: Json[] = Array.isArray(body?.results?.tags) ? body.results.tags : entityList(body)
   const seen = new Set<string>()
+  const themes = tagType.includes(':theme:')
   return tags
     .map((t) => ({ id: String(t.tag_id ?? t.id ?? t.name), name: tidyTag(String(t.name ?? '')), affinity: num(t.query?.affinity) }))
     .filter((t) => {
       const k = t.name.toLowerCase()
       // Music tags include place names ("nashville", "new york") and filler ("cool"); they say nothing about taste.
       if (!t.name || seen.has(k) || k === crowd.city.toLowerCase() || PLACE_TAGS.has(k) || k === 'cool') return false
+      // Themes about who people are (race, gender, sexuality, religion...) describe a show's subject, but shown as
+      // "what this crowd is into" they read as profiling the audience. The room profile sticks to taste.
+      if (themes && isIdentityTheme(k)) return false
       seen.add(k)
       return true
     })
@@ -322,6 +327,13 @@ export async function crowdTags(tagType: string, parents: Kind, crowd: Crowd, re
 }
 
 const PLACE_TAGS = new Set(['new york', 'nashville', 'chicago', 'los angeles', 'atlanta', 'boston', 'austin', 'texas', 'brooklyn', 'salt lake city', 'utah', 'south africa'])
+
+const IDENTITY_THEME =
+  /\b(race|racial|racism|ethnic\w*|afro\w*|black|white|african|latin\w*|hispanic|asian|indigenous|native|jewish|muslim|christian\w*|religio\w*|faith|gender|femin\w*|masculin\w*|queer|lgbt\w*|gay|lesbian|trans|transgender|sexual\w*|immigra\w*|disabilit\w*|class)\b/
+
+export function isIdentityTheme(name: string) {
+  return IDENTITY_THEME.test(name.toLowerCase())
+}
 
 function tidyTag(name: string) {
   const s = name.replace(/\s*-\s*/g, '-').replace(/\s+/g, ' ').trim()
