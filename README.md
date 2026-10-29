@@ -2,6 +2,10 @@
 
 **Know the room before you walk on stage.**
 
+**Live demo:** [rtr-qloo.vercel.app](https://rtr-qloo.vercel.app) · **Benchmark:** [rtr-qloo.vercel.app/lab](https://rtr-qloo.vercel.app/lab) · **MCP endpoint:** `https://rtr-qloo.vercel.app/api/mcp`
+
+> **Try it in a minute:** click **Run the demo**. It reads a set written for Texas in front of a Brooklyn crowd on live Qloo data: the set scores 14/100 as written, and a model with no data disagrees with Qloo on 9 of its 11 references. Then open **Rewritten set** for the swaps, **Tour map** for the cities where it plays best, and **Receipts** for the Qloo request behind every number. The first read takes about 40 seconds on a cold cache (over 100 live Qloo calls); repeat reads are served from cache.
+
 Comedians, keynote speakers and touring performers write one set and perform it in dozens of cities. A reference that kills in Nashville can die in Brooklyn, and nobody knows which until the silence. Read the Room is an agent that reads your set the way tonight's crowd will hear it.
 
 Paste a set, speech or toast and pick a city (and optionally the room: college show, corporate gig, casino theater). The agent:
@@ -15,7 +19,7 @@ Paste a set, speech or toast and pick a city (and optionally the room: college s
 
 It also asks a model with no data to guess the same verdicts, and shows where the guess and Qloo disagree. That is the point of the project: without Qloo, an AI can only guess in stereotypes.
 
-**The benchmark** (`/lab`): every reference in both sample scripts, in 8 cities. On live Qloo data, a model with no data disagreed with Qloo on **54% of 136 calls**. Of the 35 bits Qloo says die, the model would have kept 23, and it called 🔥 about twice as often as the data supports. (The model's guesses vary slightly from run to run.)
+**The benchmark** (`/lab`): every reference in both sample scripts, in 8 cities. On live Qloo data, a model with no data disagreed with Qloo on **54% of 136 calls**. Of the 35 bits Qloo says die, the model would have kept 23; it said "kills" 12 times where Qloo says "dies", and it called 🔥 78 times where the data supports 35. (The model's guesses vary slightly from run to run.) Disagreement does not prove the model wrong, since affinity is not laughter, but it shows how often a model-only tool would give a performer different advice than the measured data.
 
 ### The Road Manager
 
@@ -26,7 +30,7 @@ A chat agent inside the report that calls Qloo on its own (OpenRouter tool calli
 The same four Qloo tools are exposed as a stateless MCP server at `/api/mcp` (Streamable HTTP): `score_references`, `find_swaps`, `city_favorites`, `compare_cities`.
 
 ```bash
-claude mcp add --transport http read-the-room https://<your-deployment>/api/mcp
+claude mcp add --transport http read-the-room https://rtr-qloo.vercel.app/api/mcp
 ```
 
 ## Why it needs Qloo
@@ -70,7 +74,7 @@ The comparison panel is Nashville, Brooklyn, Austin, Salt Lake City, Los Angeles
 
 ## Run it locally
 
-Requires Node.js 22.
+Requires Node.js 22, a Qloo API key (see the [Qloo developer docs](https://docs.qloo.com) for hackathon access) and an [OpenRouter API key](https://openrouter.ai/keys).
 
 ```bash
 npm install
@@ -91,7 +95,7 @@ Vercel: import the repo and set `QLOO_API_KEY`, `QLOO_BASE_URL`, `OPENROUTER_API
 - Qloo results describe what groups tend to like, not what any one person in the room will do.
 - Affinity is not laughter. A reference the crowd loves still needs a good joke around it.
 - No personal data is sent to Qloo: only entity names, a city and an optional age band.
-- Qloo responses are cached in server memory only (allowed by the hackathon rules) and never committed.
+- Qloo responses are cached server-side for 6 hours: in the instance's memory, then in Vercel's runtime cache shared by every serverless instance. Nothing is stored in the browser or committed to the repo.
 - Requests are paced under the key's 10-per-second limit, so a rate-limited call is never mistaken for "no audience here".
 - Some entities (for example a few chains and actors) have no location data in Qloo; they show as "No data" instead of a guess.
 
